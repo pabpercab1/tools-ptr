@@ -11,7 +11,7 @@ export const Route = createFileRoute("/")({
   component: PollingTool,
 });
 
-const API = "https://api.ptr.zanz2.dev/api";
+const API = "/api/ptr";
 const FALLBACK_COLOR = "#999999";
 
 type Nation = {
