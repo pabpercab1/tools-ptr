@@ -348,7 +348,7 @@ function PollingTool() {
                 <span className="text-xs text-muted-foreground">{pollDate}</span>
               </div>
               <BarChart rows={rows} mode={mode} maxValue={maxValue} />
-              {source && <p className="mt-3 text-xs text-muted-foreground">{source}</p>}
+              {marginError.trim() && <p className="mt-3 text-xs text-muted-foreground">Margin of error: ±{marginError.trim()}%</p>}
             </div>
           </div>
         ) : null}
