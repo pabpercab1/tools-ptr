@@ -63,22 +63,34 @@ export function ParliamentChart({ seats, totalSeats }: Props) {
 
     if (flat.length === 0) return;
 
-    // Heuristic seat radius so most parliaments fit cleanly.
+    const N = flat.length;
+    // Cap the drawn width for small parliaments so the hemicycle stays dense
+    // instead of becoming a thin arc with a huge empty centre.
+    const drawWidth = Math.min(width, Math.max(360, Math.round(Math.sqrt(N) * 55)));
+    const R = drawWidth / 2;
+    // Seat radius chosen so the rows fill the full radius (no empty middle).
+    // Derived from capacity ≈ 0.3 * R^2 / r^2 ≈ N.
     const seatRadius = Math.max(
-      3,
-      Math.min(9, Math.floor(width / Math.max(40, Math.sqrt(flat.length) * 9))),
+      2.5,
+      Math.min(11, (R * 0.55) / Math.sqrt(Math.max(1, N))),
     );
-    const rowHeight = seatRadius * 2.4;
+    const rowHeight = seatRadius * 2.25;
 
     const chart = parliamentChart()
-      .width(width)
-      .sections(4)
-      .sectionGap(seatRadius * 1.5)
+      .width(drawWidth)
+      .sections(1)
+      .sectionGap(0)
       .seatRadius(seatRadius)
       .rowHeight(rowHeight);
 
-    const height = Math.ceil(width / 2) + 8;
-    svg.attr("viewBox", `0 0 ${width} ${height}`).attr("width", "100%").attr("height", height);
+    const height = Math.ceil(drawWidth / 2) + Math.ceil(seatRadius * 2);
+    svg
+      .attr("viewBox", `0 0 ${drawWidth} ${height}`)
+      .attr("width", "100%")
+      .attr("preserveAspectRatio", "xMidYMin meet")
+      .style("max-width", `${drawWidth}px`)
+      .style("display", "block")
+      .style("margin", "0 auto");
 
     const g = svg.append("g");
     g.call(chart.data(flat));
