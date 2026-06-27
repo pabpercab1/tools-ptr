@@ -652,6 +652,7 @@ function BarChart({
                         left: "10%",
                         right: showPrevious && prevRaw != null ? "48%" : "10%",
                         backgroundColor: color,
+                        border: `1px solid ${borderForColor(color)}`,
                       }}
                     >
                       <span className="absolute -top-4 left-1/2 -translate-x-1/2 font-bold text-[10px] tabular-nums whitespace-nowrap text-foreground">
