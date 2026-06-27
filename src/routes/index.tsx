@@ -116,7 +116,7 @@ function PollingTool() {
 
   const [estTotalSeats, setEstTotalSeats] = useState<number>(449);
   const [estThreshold, setEstThreshold] = useState<number>(3.0);
-  const [dashboardLoaded, setDashboardLoaded] = useState(false);
+  
 
 
   // Timeline: cache of fetched poll details for current nation, for trend line
