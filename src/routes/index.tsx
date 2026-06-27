@@ -162,7 +162,7 @@ function PollingTool() {
     jget<{ total_seats: number; threshold_pct: number }>(`/nations/${nationId}/elections/dashboard`)
       .then((d) => {
         if (typeof d.total_seats === "number") setEstTotalSeats(d.total_seats);
-        if (typeof d.threshold_pct === "number") setEstThreshold(d.threshold_pct);
+        if (typeof d.threshold_pct === "number") setEstThreshold(Math.round(d.threshold_pct));
       })
       .catch(() => {});
   }, [nationId]);
@@ -361,9 +361,9 @@ function PollingTool() {
                     <input
                       type="number"
                       min={0}
-                      step={0.1}
+                      step={1}
                       value={estThreshold}
-                      onChange={(e) => setEstThreshold(Number(e.target.value) || 0)}
+                      onChange={(e) => setEstThreshold(Math.max(0, Math.floor(Number(e.target.value) || 0)))}
                       className="h-8 w-20 rounded-md border border-input bg-background px-2 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                     <span className="text-muted-foreground">%</span>
