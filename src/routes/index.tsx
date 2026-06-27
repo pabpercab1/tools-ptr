@@ -155,6 +155,19 @@ function PollingTool() {
       });
   }, [nationId]);
 
+  // Election dashboard defaults for "Estimate parliament" mode
+  useEffect(() => {
+    if (nationId == null) return;
+    setDashboardLoaded(false);
+    jget<{ total_seats: number; threshold_pct: number }>(`/nations/${nationId}/elections/dashboard`)
+      .then((d) => {
+        if (typeof d.total_seats === "number") setEstTotalSeats(d.total_seats);
+        if (typeof d.threshold_pct === "number") setEstThreshold(d.threshold_pct);
+        setDashboardLoaded(true);
+      })
+      .catch(() => setDashboardLoaded(true));
+  }, [nationId]);
+
   // Selected poll detail
   useEffect(() => {
     if (nationId == null || pollId == null) return;
