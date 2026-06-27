@@ -346,7 +346,7 @@ function ThresholdCard({
         <span className="text-sm font-normal text-muted-foreground"> / {needed}{suffix ?? ""}</span>
       </div>
       <div className="text-[11px] text-muted-foreground tabular-nums">
-        {pass ? `+${current - needed + (suffix ? 1 : 0)} surplus` : `${deficit} seat${deficit === 1 ? "" : "s"} short`}
+        {pass ? `+${current - needed} over threshold` : `${deficit} seat${deficit === 1 ? "" : "s"} short`}
       </div>
     </div>
   );

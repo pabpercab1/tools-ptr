@@ -9,9 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as MajorityRouteImport } from './routes/majority'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPtrSplatRouteImport } from './routes/api/ptr.$'
 
+const MajorityRoute = MajorityRouteImport.update({
+  id: '/majority',
+  path: '/majority',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -25,32 +31,43 @@ const ApiPtrSplatRoute = ApiPtrSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/majority': typeof MajorityRoute
   '/api/ptr/$': typeof ApiPtrSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/majority': typeof MajorityRoute
   '/api/ptr/$': typeof ApiPtrSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/majority': typeof MajorityRoute
   '/api/ptr/$': typeof ApiPtrSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/ptr/$'
+  fullPaths: '/' | '/majority' | '/api/ptr/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/ptr/$'
-  id: '__root__' | '/' | '/api/ptr/$'
+  to: '/' | '/majority' | '/api/ptr/$'
+  id: '__root__' | '/' | '/majority' | '/api/ptr/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  MajorityRoute: typeof MajorityRoute
   ApiPtrSplatRoute: typeof ApiPtrSplatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/majority': {
+      id: '/majority'
+      path: '/majority'
+      fullPath: '/majority'
+      preLoaderRoute: typeof MajorityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -70,6 +87,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  MajorityRoute: MajorityRoute,
   ApiPtrSplatRoute: ApiPtrSplatRoute,
 }
 export const routeTree = rootRouteImport
