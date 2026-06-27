@@ -111,8 +111,13 @@ function PollingTool() {
   const [pollErr, setPollErr] = useState<string | null>(null);
   const [pollLoading, setPollLoading] = useState(false);
 
-  const [mode, setMode] = useState<"poll" | "seats">("poll");
+  const [mode, setMode] = useState<"poll" | "seats" | "estimate">("poll");
   const [showPrevious, setShowPrevious] = useState(true);
+
+  const [estTotalSeats, setEstTotalSeats] = useState<number>(449);
+  const [estThreshold, setEstThreshold] = useState<number>(3.0);
+  const [dashboardLoaded, setDashboardLoaded] = useState(false);
+
 
   // Timeline: cache of fetched poll details for current nation, for trend line
   const [timeline, setTimeline] = useState<PollDetail[]>([]);
