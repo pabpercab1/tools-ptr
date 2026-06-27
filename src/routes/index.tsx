@@ -245,18 +245,29 @@ function PollingTool() {
 
         {poll && (
           <section className="flex flex-wrap items-center justify-between gap-3">
-            <div className="inline-flex rounded-md border border-border p-0.5 bg-secondary">
-              {(["poll", "seats"] as const).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setMode(m)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-[5px] transition-colors ${
-                    mode === m ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {m === "poll" ? "Voting intention" : "Projected seats"}
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="inline-flex rounded-md border border-border p-0.5 bg-secondary">
+                {(["poll", "seats"] as const).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setMode(m)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-[5px] transition-colors ${
+                      mode === m ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {m === "poll" ? "Voting intention" : "Projected seats"}
+                  </button>
+                ))}
+              </div>
+              <label className="inline-flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  className="h-3.5 w-3.5 accent-foreground cursor-pointer"
+                  checked={showPrevious}
+                  onChange={(e) => setShowPrevious(e.target.checked)}
+                />
+                Show previous election
+              </label>
             </div>
             <div className="text-xs text-muted-foreground">
               {poll.allocation_method} · {poll.total_seats} seats
