@@ -204,12 +204,36 @@ function PollingTool() {
 
   const selectedNation = nations?.find((n) => n.id === nationId) ?? null;
 
+  // D'Hondt estimate based on current poll + user-set total seats & threshold
+  const estimate = useMemo(() => {
+    if (!poll) return null;
+    const eligible = poll.parties.filter((p) => p.support_pct >= estThreshold);
+    const seatMap = dHondt(
+      eligible.map((p) => ({ id: p.party_id, votes: p.support_pct })),
+      Math.max(0, Math.floor(estTotalSeats)),
+    );
+    return { seatMap, eligibleCount: eligible.length };
+  }, [poll, estThreshold, estTotalSeats]);
+
   const rows = useMemo(() => {
     if (!poll) return [];
-    return [...poll.parties].sort((a, b) =>
-      mode === "poll" ? b.support_pct - a.support_pct : b.projected_seats - a.projected_seats,
-    );
-  }, [poll, mode]);
+    const parties = poll.parties;
+    if (mode === "poll") {
+      return [...parties].sort((a, b) => b.support_pct - a.support_pct);
+    }
+    if (mode === "seats") {
+      return [...parties].sort((a, b) => b.projected_seats - a.projected_seats);
+    }
+    // estimate: replace projected_seats with D'Hondt allocation
+    const sm = estimate?.seatMap ?? new Map<number, number>();
+    return parties
+      .map((p) => ({ ...p, projected_seats: sm.get(p.party_id) ?? 0 }))
+      .sort((a, b) => b.projected_seats - a.projected_seats);
+  }, [poll, mode, estimate]);
+
+  const effectiveTotalSeats =
+    mode === "estimate" ? Math.max(1, Math.floor(estTotalSeats)) : poll?.total_seats ?? 0;
+  const effectiveShowPrevious = mode === "estimate" ? false : showPrevious;
 
   const maxValue =
     mode === "poll"
@@ -218,15 +242,16 @@ function PollingTool() {
           ...rows.map((r) => r.support_pct),
           ...(showPrevious ? rows.map((r) => r.election_support_pct ?? 0) : []),
         )
-      : poll && poll.total_seats > 0
+      : effectiveTotalSeats > 0
         ? Math.max(
             50,
-            ...rows.map((r) => ((r.projected_seats || 0) / poll.total_seats) * 100),
-            ...(showPrevious
-              ? rows.map((r) => ((r.election_seats ?? 0) / poll.total_seats) * 100)
+            ...rows.map((r) => ((r.projected_seats || 0) / effectiveTotalSeats) * 100),
+            ...(effectiveShowPrevious
+              ? rows.map((r) => ((r.election_seats ?? 0) / effectiveTotalSeats) * 100)
               : []),
           )
         : 50;
+
 
   return (
     <div className="min-h-screen bg-background text-foreground">
