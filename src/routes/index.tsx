@@ -386,83 +386,167 @@ function EmptyState({ message, tone }: { message: string; tone?: "error" }) {
   );
 }
 
+function mixWithWhite(hex: string, t: number) {
+  const c = hex.replace("#", "");
+  const full = c.length === 3 ? c.split("").map((x) => x + x).join("") : c;
+  const r = parseInt(full.slice(0, 2), 16);
+  const g = parseInt(full.slice(2, 4), 16);
+  const b = parseInt(full.slice(4, 6), 16);
+  const mix = (v: number) => Math.round(v + (255 - v) * t);
+  return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
+}
+
 function BarChart({
   rows,
   mode,
   maxValue,
   totalSeats,
+  showPrevious,
 }: {
   rows: PollParty[];
   mode: "poll" | "seats";
   maxValue: number;
   totalSeats: number;
+  showPrevious: boolean;
 }) {
   const top = Math.max(10, Math.ceil(maxValue / 10) * 10);
   const ticks = Array.from({ length: top / 10 + 1 }, (_, i) => i * 10);
+  const chartH = 280;
+  const axisW = 36;
 
   return (
     <div className="rounded-lg border border-border bg-card p-5">
-      <div className="relative">
-        <div className="absolute inset-y-0 left-[5.5rem] right-0 pointer-events-none">
+      {/* Legend */}
+      <div className="flex justify-end items-center gap-4 mb-3 text-[10px] text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm bg-slate-700" />
+          Latest poll
+        </span>
+        {showPrevious && (
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-sm bg-slate-300" />
+            Previous election
+          </span>
+        )}
+      </div>
+
+      <div className="relative" style={{ paddingLeft: axisW }}>
+        {/* Y-axis labels */}
+        <div className="absolute left-0 top-0" style={{ width: axisW, height: chartH }}>
           {ticks.map((t) => (
             <div
               key={t}
-              className="absolute top-0 bottom-6 border-l"
-              style={{ left: `${(t / top) * 100}%`, borderColor: "var(--grid)" }}
-            />
+              className="absolute right-2 -translate-y-1/2 text-[10px] text-muted-foreground tabular-nums"
+              style={{ bottom: `${(t / top) * 100}%` }}
+            >
+              {t}%
+            </div>
           ))}
         </div>
 
-        <div className="space-y-2 relative">
+        {/* Plot area */}
+        <div className="relative" style={{ height: chartH }}>
+          {/* Gridlines */}
+          {ticks.map((t) => (
+            <div
+              key={t}
+              className="absolute left-0 right-0 border-t"
+              style={{ bottom: `${(t / top) * 100}%`, borderColor: "var(--grid)" }}
+            />
+          ))}
+
+          {/* Bars */}
+          <div className="absolute inset-0 flex items-end gap-2 px-1">
+            {rows.map((p) => {
+              const value =
+                mode === "poll"
+                  ? p.support_pct
+                  : totalSeats > 0
+                    ? (p.projected_seats / totalSeats) * 100
+                    : 0;
+              const prevRaw =
+                mode === "poll"
+                  ? p.election_support_pct
+                  : p.election_seats != null && totalSeats > 0
+                    ? (p.election_seats / totalSeats) * 100
+                    : null;
+              const curHpct = (value / top) * 100;
+              const prevHpct = prevRaw != null ? (prevRaw / top) * 100 : 0;
+              const color = safeColor(p.color);
+              const light = mixWithWhite(color, 0.6);
+              const display = mode === "poll" ? fmtPct(value) : `${p.projected_seats}`;
+              const prevDisplay =
+                prevRaw == null
+                  ? null
+                  : mode === "poll"
+                    ? fmtPct(prevRaw)
+                    : `${p.election_seats}`;
+
+              return (
+                <div key={p.party_id} className="flex-1 min-w-0 h-full relative">
+                  {/* Previous bar (lighter, thinner, offset behind/right) */}
+                  {showPrevious && prevRaw != null && prevRaw > 0 && (
+                    <div
+                      className="absolute bottom-0 rounded-t-sm"
+                      style={{
+                        height: `${prevHpct}%`,
+                        left: "52%",
+                        right: "10%",
+                        backgroundColor: light,
+                      }}
+                    >
+                      <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 italic text-[9px] text-muted-foreground tabular-nums whitespace-nowrap">
+                        {prevDisplay}
+                      </span>
+                    </div>
+                  )}
+                  {/* Current bar (main) */}
+                  {value > 0 && (
+                    <div
+                      className="absolute bottom-0 rounded-t-sm transition-[height] duration-300"
+                      style={{
+                        height: `${curHpct}%`,
+                        left: "10%",
+                        right: showPrevious && prevRaw != null ? "48%" : "10%",
+                        backgroundColor: color,
+                      }}
+                    >
+                      <span className="absolute -top-4 left-1/2 -translate-x-1/2 font-bold text-[10px] tabular-nums whitespace-nowrap text-foreground">
+                        {display}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* X-axis party labels */}
+        <div className="flex gap-2 px-1 mt-2">
           {rows.map((p) => {
-            const value =
-              mode === "poll"
-                ? p.support_pct
-                : totalSeats > 0
-                  ? (p.projected_seats / totalSeats) * 100
-                  : 0;
-            const widthPct = (value / top) * 100;
             const color = safeColor(p.color);
-            const display = mode === "poll" ? fmtPct(value) : `${p.projected_seats} seats`;
             return (
-              <div key={p.party_id} className="flex items-center gap-2">
-                <div className="w-4 flex justify-center shrink-0">
-                  <span className="h-3 w-3 rounded-full border border-border" style={{ backgroundColor: color }} />
-                </div>
-                <div className="w-16 text-xs font-medium shrink-0">{p.abbreviation}</div>
-                <div className="flex-1 h-7 relative">
-                  <div
-                    className="h-full rounded-full flex items-center justify-end pr-2.5 text-[11px] font-semibold transition-[width] duration-300"
-                    style={{
-                      width: `${Math.max(widthPct, value > 0 ? 2 : 0)}%`,
-                      backgroundColor: color,
-                      minWidth: value > 0 ? "2.75rem" : 0,
-                      color: pickTextColor(color),
-                    }}
-                  >
-                    {value > 0 && <span>{display}</span>}
-                  </div>
-                </div>
+              <div
+                key={p.party_id}
+                className="flex-1 min-w-0 flex flex-col items-center gap-1"
+              >
+                <span
+                  className="h-1 w-6 rounded-full"
+                  style={{ backgroundColor: color }}
+                />
+                <span className="text-[10px] font-medium truncate max-w-full">
+                  {p.abbreviation}
+                </span>
               </div>
             );
           })}
-        </div>
-
-        <div className="relative h-5 mt-2 ml-[5.5rem]">
-          {ticks.map((t) => (
-            <span
-              key={t}
-              className="absolute -translate-x-1/2 text-[10px] text-muted-foreground tabular-nums"
-              style={{ left: `${(t / top) * 100}%` }}
-            >
-              {t}%
-            </span>
-          ))}
         </div>
       </div>
     </div>
   );
 }
+
 
 function TimelineChart({ polls }: { polls: PollDetail[] }) {
   const width = 760;
