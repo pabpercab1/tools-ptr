@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { ParliamentChart } from "@/components/ParliamentChart";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -404,6 +405,17 @@ function PollingTool() {
             )}
             {mode === "estimate" && estimate && estimate.eligibleCount === 0 ? (
               <EmptyState message="No party would win seats — every party is below the threshold." />
+            ) : mode === "estimate" ? (
+              <ParliamentChart
+                seats={rows.map((r) => ({
+                  partyId: r.party_id,
+                  abbr: r.abbreviation,
+                  name: r.party_name,
+                  color: safeColor(r.color),
+                  seats: r.projected_seats,
+                }))}
+                totalSeats={effectiveTotalSeats}
+              />
             ) : (
               <BarChart
                 rows={rows}
