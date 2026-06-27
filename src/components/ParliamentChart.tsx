@@ -136,8 +136,17 @@ export function ParliamentChart({ seats, totalSeats }: Props) {
     g.call(chart.data(flat));
     g.selectAll("circle")
       .attr("fill", (d: unknown) => (d as { color: string }).color)
-      .attr("stroke", "#ffffff")
-      .attr("stroke-width", 0.5);
+      .attr("stroke", (d: unknown) => {
+        const c = (d as { color: string }).color;
+        const h = c.replace("#", "");
+        const f = h.length === 3 ? h.split("").map((x) => x + x).join("") : h;
+        const r = parseInt(f.slice(0, 2), 16);
+        const gg = parseInt(f.slice(2, 4), 16);
+        const b = parseInt(f.slice(4, 6), 16);
+        const luma = (0.299 * r + 0.587 * gg + 0.114 * b) / 255;
+        return luma > 0.92 ? "#94a3b8" : "#ffffff";
+      })
+      .attr("stroke-width", 0.75);
   }, [seats, width, effectiveSettings]);
 
   const legend = [...seats].filter((s) => s.seats > 0).sort((a, b) => b.seats - a.seats);
