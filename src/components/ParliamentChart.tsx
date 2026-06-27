@@ -29,22 +29,30 @@ function orderForHemicycle(parties: ParliamentSeat[]): ParliamentSeat[] {
   return [...left.reverse(), ...right];
 }
 
-// Auto-fit: derive seat radius from capacity formula so rows fill the radius.
-function autoParams(N: number, containerWidth: number, sections: number) {
+// Auto-fit: pick section count and geometry so the hemicycle fills the
+// available width without leaving an oversized empty centre.
+function autoParams(N: number, containerWidth: number) {
   const drawWidth = Math.min(
     containerWidth,
     Math.max(360, Math.round(Math.sqrt(Math.max(1, N)) * 55)),
   );
   const R = drawWidth / 2;
-  // Larger section count reduces effective capacity; compensate slightly.
-  const sectionPenalty = 1 + (sections - 1) * 0.08;
+  const rawSections = Math.max(1, Math.min(9, Math.round(Math.sqrt(N) / 5)));
+  const sections =
+    N % 2 === 0
+      ? rawSections % 2 === 0
+        ? rawSections
+        : Math.max(2, rawSections + 1)
+      : rawSections % 2 === 1
+        ? rawSections
+        : rawSections + 1;
   const seatRadius = Math.max(
     2.5,
-    Math.min(12, ((R * 0.55) / Math.sqrt(Math.max(1, N))) * sectionPenalty),
+    Math.min(14, (0.4 * R) / Math.sqrt(Math.max(1, N))),
   );
-  const rowHeight = seatRadius * 2.25;
-  const sectionGap = sections > 1 ? Math.max(4, Math.round(seatRadius * 1.4)) : 0;
-  return { drawWidth, seatRadius, rowHeight, sectionGap };
+  const rowHeight = seatRadius * 2.33;
+  const sectionGap = Math.max(4, seatRadius * 2.89);
+  return { drawWidth, sections, seatRadius, rowHeight, sectionGap };
 }
 
 type Settings = {
@@ -55,6 +63,8 @@ type Settings = {
   sectionGap: number;
 };
 
+type EffectiveSettings = Settings & { drawWidth: number };
+
 export function ParliamentChart({ seats, totalSeats }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -62,10 +72,10 @@ export function ParliamentChart({ seats, totalSeats }: Props) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState<Settings>({
     auto: true,
-    sections: 4,
-    seatRadius: 7,
-    rowHeight: 16,
-    sectionGap: 10,
+    sections: 5,
+    seatRadius: 9,
+    rowHeight: 21,
+    sectionGap: 26,
   });
 
   const N = useMemo(
@@ -73,21 +83,11 @@ export function ParliamentChart({ seats, totalSeats }: Props) {
     [seats],
   );
 
-  // Keep manual defaults synced with auto values until user edits them.
-  useEffect(() => {
-    if (!settings.auto) return;
-    const a = autoParams(N, width, settings.sections);
-    setSettings((prev) =>
-      prev.auto
-        ? {
-            ...prev,
-            seatRadius: Number(a.seatRadius.toFixed(2)),
-            rowHeight: Number(a.rowHeight.toFixed(2)),
-            sectionGap: a.sectionGap,
-          }
-        : prev,
-    );
-  }, [N, width, settings.auto, settings.sections]);
+  const effectiveSettings = useMemo<EffectiveSettings>(() => {
+    const auto = autoParams(N, width);
+    if (!settings.auto) return { ...settings, drawWidth: auto.drawWidth };
+    return { ...settings, ...auto, drawWidth: auto.drawWidth };
+  }, [settings, N, width]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -114,15 +114,11 @@ export function ParliamentChart({ seats, totalSeats }: Props) {
     svg.selectAll("*").remove();
     if (flat.length === 0) return;
 
-    const a = autoParams(flat.length, width, settings.sections);
-    const drawWidth = a.drawWidth;
-    const seatRadius = settings.auto ? a.seatRadius : settings.seatRadius;
-    const rowHeight = settings.auto ? a.rowHeight : settings.rowHeight;
-    const sectionGap = settings.auto ? a.sectionGap : settings.sectionGap;
+    const { drawWidth, sections, seatRadius, rowHeight, sectionGap } = effectiveSettings;
 
     const chart = parliamentChart()
       .width(drawWidth)
-      .sections(Math.max(1, settings.sections))
+      .sections(Math.max(1, sections))
       .sectionGap(sectionGap)
       .seatRadius(seatRadius)
       .rowHeight(rowHeight);
@@ -142,7 +138,7 @@ export function ParliamentChart({ seats, totalSeats }: Props) {
       .attr("fill", (d: unknown) => (d as { color: string }).color)
       .attr("stroke", "#ffffff")
       .attr("stroke-width", 0.5);
-  }, [seats, width, settings]);
+  }, [seats, width, effectiveSettings]);
 
   const legend = [...seats].filter((s) => s.seats > 0).sort((a, b) => b.seats - a.seats);
   const allocated = legend.reduce((s, p) => s + p.seats, 0);
@@ -160,7 +156,7 @@ export function ParliamentChart({ seats, totalSeats }: Props) {
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
             </svg>
           </button>
           {settingsOpen && (
@@ -183,11 +179,12 @@ export function ParliamentChart({ seats, totalSeats }: Props) {
                   min={1}
                   max={10}
                   step={1}
-                  value={settings.sections}
+                  disabled={settings.auto}
+                  value={effectiveSettings.sections}
                   onChange={(e) =>
                     setSettings((s) => ({ ...s, sections: Math.max(1, Number(e.target.value) || 1) }))
                   }
-                  className="h-7 w-16 rounded border border-input bg-background px-1.5 text-right tabular-nums"
+                  className="h-7 w-16 rounded border border-input bg-background px-1.5 text-right tabular-nums disabled:opacity-50"
                 />
               </Field>
               <Field label="Seat radius">
@@ -196,7 +193,7 @@ export function ParliamentChart({ seats, totalSeats }: Props) {
                   min={1}
                   step={0.5}
                   disabled={settings.auto}
-                  value={settings.seatRadius}
+                  value={effectiveSettings.seatRadius}
                   onChange={(e) =>
                     setSettings((s) => ({ ...s, seatRadius: Number(e.target.value) || 1 }))
                   }
@@ -209,7 +206,7 @@ export function ParliamentChart({ seats, totalSeats }: Props) {
                   min={1}
                   step={0.5}
                   disabled={settings.auto}
-                  value={settings.rowHeight}
+                  value={effectiveSettings.rowHeight}
                   onChange={(e) =>
                     setSettings((s) => ({ ...s, rowHeight: Number(e.target.value) || 1 }))
                   }
@@ -222,7 +219,7 @@ export function ParliamentChart({ seats, totalSeats }: Props) {
                   min={0}
                   step={1}
                   disabled={settings.auto}
-                  value={settings.sectionGap}
+                  value={effectiveSettings.sectionGap}
                   onChange={(e) =>
                     setSettings((s) => ({ ...s, sectionGap: Math.max(0, Number(e.target.value) || 0) }))
                   }
