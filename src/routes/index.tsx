@@ -5,7 +5,7 @@ import { ParliamentChart } from "@/components/ParliamentChart";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "PTR Tools — Polling Visualiser" },
+      { title: "Polling — PR:R Tools" },
       { name: "description", content: "EuropeElects-style poll graphics for fictional elections." },
     ],
   }),
