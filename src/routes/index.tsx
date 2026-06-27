@@ -162,7 +162,7 @@ function PollingTool() {
     jget<{ total_seats: number; threshold_pct: number }>(`/nations/${nationId}/elections/dashboard`)
       .then((d) => {
         if (typeof d.total_seats === "number") setEstTotalSeats(d.total_seats);
-        if (typeof d.threshold_pct === "number") setEstThreshold(d.threshold_pct);
+        if (typeof d.threshold_pct === "number") setEstThreshold(Math.round(d.threshold_pct));
       })
       .catch(() => {});
   }, [nationId]);
