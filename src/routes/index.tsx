@@ -749,13 +749,17 @@ function TimelineChart({ polls }: { polls: PollDetail[] }) {
               })
               .filter(Boolean)
               .join(" ");
+            const nearWhite = isNearWhite(info.color);
             return (
               <g key={pid}>
+                {nearWhite && (
+                  <polyline points={pts} fill="none" stroke="#cbd5e1" strokeWidth={3.5} strokeLinejoin="round" strokeLinecap="round" />
+                )}
                 <polyline points={pts} fill="none" stroke={info.color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
                 {polls.map((s, i) => {
                   const pp = s.parties.find((x) => x.party_id === pid);
                   if (!pp) return null;
-                  return <circle key={i} cx={xPos(i)} cy={yPos(pp.support_pct)} r={2.5} fill={info.color} />;
+                  return <circle key={i} cx={xPos(i)} cy={yPos(pp.support_pct)} r={2.5} fill={info.color} stroke={nearWhite ? "#94a3b8" : "none"} strokeWidth={nearWhite ? 0.75 : 0} />;
                 })}
               </g>
             );
