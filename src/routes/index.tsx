@@ -419,7 +419,7 @@ function PollingTool() {
             ) : (
               <BarChart
                 rows={rows}
-                mode={mode}
+                mode={mode as "poll" | "seats"}
                 maxValue={maxValue}
                 totalSeats={effectiveTotalSeats}
                 showPrevious={effectiveShowPrevious}
