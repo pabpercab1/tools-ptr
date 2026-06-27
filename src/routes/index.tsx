@@ -361,9 +361,9 @@ function PollingTool() {
                     <input
                       type="number"
                       min={0}
-                      step={0.1}
+                      step={1}
                       value={estThreshold}
-                      onChange={(e) => setEstThreshold(Number(e.target.value) || 0)}
+                      onChange={(e) => setEstThreshold(Math.max(0, Math.floor(Number(e.target.value) || 0)))}
                       className="h-8 w-20 rounded-md border border-input bg-background px-2 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                     <span className="text-muted-foreground">%</span>
