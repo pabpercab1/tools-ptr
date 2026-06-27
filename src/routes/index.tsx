@@ -73,6 +73,30 @@ async function jget<T>(path: string): Promise<T> {
   return r.json();
 }
 
+function dHondt(
+  parties: { id: number; votes: number }[],
+  seats: number,
+): Map<number, number> {
+  const result = new Map<number, number>();
+  for (const p of parties) result.set(p.id, 0);
+  if (seats <= 0 || parties.length === 0) return result;
+  const totalVotes = parties.reduce((s, p) => s + p.votes, 0);
+  if (totalVotes <= 0) return result;
+  for (let i = 0; i < seats; i++) {
+    let bestId = parties[0].id;
+    let bestQ = -1;
+    for (const p of parties) {
+      const q = p.votes / ((result.get(p.id) ?? 0) + 1);
+      if (q > bestQ) {
+        bestQ = q;
+        bestId = p.id;
+      }
+    }
+    result.set(bestId, (result.get(bestId) ?? 0) + 1);
+  }
+  return result;
+}
+
 function PollingTool() {
   const [nations, setNations] = useState<Nation[] | null>(null);
   const [nationsErr, setNationsErr] = useState<string | null>(null);
