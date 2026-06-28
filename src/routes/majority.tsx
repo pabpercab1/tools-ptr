@@ -64,7 +64,8 @@ function MajorityTool() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  type Vote = "yes" | "abstain" | "no";
+  const [votes, setVotes] = useState<Map<number, Vote>>(new Map());
 
   useEffect(() => {
     jget<Nation[]>("/nations")
@@ -79,7 +80,7 @@ function MajorityTool() {
     if (nationId == null) return;
     setLoading(true);
     setErr(null);
-    setSelected(new Set());
+    setVotes(new Map());
     Promise.all([
       jget<Dashboard>(`/nations/${nationId}/elections/dashboard`),
       jget<Party[]>(`/parties?nation_id=${nationId}&active_only=true`),
@@ -106,25 +107,35 @@ function MajorityTool() {
   }, [dashboard]);
 
   const totalSeats = dashboard?.total_seats ?? 0;
-  const coalitionSeats = useMemo(
-    () => seatedParties.filter((p) => selected.has(p.party_id)).reduce((s, p) => s + p.seats, 0),
-    [seatedParties, selected],
-  );
-  const largestOpponent = useMemo(() => {
-    const opp = seatedParties.filter((p) => !selected.has(p.party_id));
-    return opp.reduce((m, p) => Math.max(m, p.seats), 0);
-  }, [seatedParties, selected]);
+
+  const tally = useMemo(() => {
+    let yes = 0, no = 0, abstain = 0;
+    for (const p of seatedParties) {
+      const v = votes.get(p.party_id);
+      if (v === "yes") yes += p.seats;
+      else if (v === "no") no += p.seats;
+      else if (v === "abstain") abstain += p.seats;
+    }
+    const unassigned = totalSeats - yes - no - abstain;
+    return { yes, no, abstain, unassigned };
+  }, [seatedParties, votes, totalSeats]);
 
   const absoluteNeeded = Math.floor(totalSeats / 2) + 1;
   const superNeeded = Math.ceil((totalSeats * 2) / 3);
 
-  const toggle = (id: number) =>
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+  const setVote = (id: number, v: Vote | null) =>
+    setVotes((prev) => {
+      const next = new Map(prev);
+      if (v === null) next.delete(id);
+      else next.set(id, v);
       return next;
     });
+
+  const VOTE_COLORS: Record<Vote, string> = {
+    yes: "#16a34a",
+    abstain: "#94a3b8",
+    no: "#dc2626",
+  };
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -132,7 +143,7 @@ function MajorityTool() {
         <header className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight">Majority Calculator</h1>
           <p className="text-sm text-muted-foreground">
-            Build a coalition from current parliamentary seats and check whether it clears each majority threshold.
+            Cast each party's vote as Yes, Abstain or No and see which majority thresholds the motion clears.
           </p>
         </header>
 
@@ -172,70 +183,63 @@ function MajorityTool() {
             {/* Threshold summary */}
             <section className="grid gap-3 sm:grid-cols-3">
               <ThresholdCard
-                label="Simple majority (plurality)"
-                desc="More seats than the largest non-coalition party"
-                current={coalitionSeats}
-                needed={largestOpponent + 1}
-                pass={coalitionSeats > largestOpponent && coalitionSeats > 0}
-                suffix={` (vs ${largestOpponent})`}
+                label="Simple majority"
+                desc="More Yes votes than No votes"
+                current={tally.yes}
+                needed={tally.no + 1}
+                pass={tally.yes > tally.no && tally.yes > 0}
+                suffix={` (vs ${tally.no} No)`}
               />
               <ThresholdCard
                 label="Absolute majority (50%+1)"
-                desc={`${absoluteNeeded} of ${totalSeats} seats`}
-                current={coalitionSeats}
+                desc={`${absoluteNeeded} Yes of ${totalSeats} seats`}
+                current={tally.yes}
                 needed={absoluteNeeded}
-                pass={coalitionSeats >= absoluteNeeded}
+                pass={tally.yes >= absoluteNeeded}
               />
               <ThresholdCard
                 label="Supermajority (⅔)"
-                desc={`${superNeeded} of ${totalSeats} seats`}
-                current={coalitionSeats}
+                desc={`${superNeeded} Yes of ${totalSeats} seats`}
+                current={tally.yes}
                 needed={superNeeded}
-                pass={coalitionSeats >= superNeeded}
+                pass={tally.yes >= superNeeded}
               />
             </section>
 
-            {/* Coalition bar */}
+            {/* Vote tally bar */}
             <section className="rounded-lg border border-border bg-card p-5 space-y-3">
               <div className="flex items-baseline justify-between gap-4 flex-wrap">
-                <div>
-                  <div className="text-xs uppercase tracking-wide text-muted-foreground">Coalition</div>
-                  <div className="text-xl font-bold tabular-nums">
-                    {coalitionSeats} <span className="text-sm font-normal text-muted-foreground">/ {totalSeats} seats ({totalSeats > 0 ? ((coalitionSeats / totalSeats) * 100).toFixed(1) : "0.0"}%)</span>
-                  </div>
+                <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
+                  <TallyStat label="Yes" value={tally.yes} total={totalSeats} color={VOTE_COLORS.yes} />
+                  <TallyStat label="Abstain" value={tally.abstain} total={totalSeats} color={VOTE_COLORS.abstain} />
+                  <TallyStat label="No" value={tally.no} total={totalSeats} color={VOTE_COLORS.no} />
+                  <TallyStat label="Unassigned" value={tally.unassigned} total={totalSeats} color="#e2e8f0" muted />
                 </div>
                 <button
                   type="button"
-                  onClick={() => setSelected(new Set())}
+                  onClick={() => setVotes(new Map())}
                   className="text-xs font-medium px-3 py-1.5 rounded-md border border-border hover:bg-secondary transition-colors"
-                  disabled={selected.size === 0}
+                  disabled={votes.size === 0}
                 >
-                  Clear selection
+                  Clear votes
                 </button>
               </div>
 
               <div className="relative h-5 w-full rounded-full bg-secondary overflow-hidden">
-                {/* Stacked coalition segments */}
                 <div className="absolute inset-0 flex">
-                  {seatedParties
-                    .filter((p) => selected.has(p.party_id))
-                    .map((p) => {
-                      const color = safeColor(p.color);
-                      const w = totalSeats > 0 ? (p.seats / totalSeats) * 100 : 0;
-                      return (
-                        <div
-                          key={p.party_id}
-                          style={{
-                            width: `${w}%`,
-                            backgroundColor: color,
-                            borderRight: `1px solid ${isNearWhite(color) ? "#cbd5e1" : "rgba(255,255,255,0.4)"}`,
-                          }}
-                          title={`${abbrMap.get(p.party_id) ?? p.party_name}: ${p.seats}`}
-                        />
-                      );
-                    })}
+                  {(["yes", "abstain", "no"] as const).map((v) => {
+                    const seats = tally[v];
+                    const w = totalSeats > 0 ? (seats / totalSeats) * 100 : 0;
+                    if (w <= 0) return null;
+                    return (
+                      <div
+                        key={v}
+                        style={{ width: `${w}%`, backgroundColor: VOTE_COLORS[v] }}
+                        title={`${v}: ${seats}`}
+                      />
+                    );
+                  })}
                 </div>
-                {/* Threshold markers */}
                 {totalSeats > 0 && (
                   <>
                     <ThresholdMarker pct={(absoluteNeeded / totalSeats) * 100} label="50%+1" />
@@ -250,33 +254,20 @@ function MajorityTool() {
               <table className="w-full text-sm">
                 <thead className="bg-secondary/40 text-xs text-muted-foreground">
                   <tr>
-                    <th className="text-left font-medium px-4 py-2 w-10"></th>
                     <th className="text-left font-medium px-2 py-2 w-8"></th>
                     <th className="text-left font-medium px-2 py-2">Party</th>
                     <th className="text-right font-medium px-3 py-2 w-20">Seats</th>
                     <th className="text-right font-medium px-3 py-2 w-20">% chamber</th>
+                    <th className="text-center font-medium px-3 py-2 w-72">Vote</th>
                   </tr>
                 </thead>
                 <tbody>
                   {seatedParties.map((p) => {
                     const color = safeColor(p.color);
-                    const isSel = selected.has(p.party_id);
                     const abbr = abbrMap.get(p.party_id);
+                    const v = votes.get(p.party_id);
                     return (
-                      <tr
-                        key={p.party_id}
-                        className={`border-t border-border cursor-pointer transition-colors ${isSel ? "bg-secondary/60" : "hover:bg-secondary/30"}`}
-                        onClick={() => toggle(p.party_id)}
-                      >
-                        <td className="px-4 py-2">
-                          <input
-                            type="checkbox"
-                            checked={isSel}
-                            onChange={() => toggle(p.party_id)}
-                            onClick={(e) => e.stopPropagation()}
-                            className="h-4 w-4 accent-foreground cursor-pointer"
-                          />
-                        </td>
+                      <tr key={p.party_id} className="border-t border-border">
                         <td className="px-2 py-2">
                           <span
                             className="inline-block h-4 w-4 rounded-sm"
@@ -293,6 +284,26 @@ function MajorityTool() {
                         <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
                           {totalSeats > 0 ? ((p.seats / totalSeats) * 100).toFixed(1) : "0.0"}%
                         </td>
+                        <td className="px-3 py-2">
+                          <div className="inline-flex w-full rounded-md border border-border overflow-hidden text-xs font-medium">
+                            {(["yes", "abstain", "no"] as const).map((opt) => {
+                              const active = v === opt;
+                              return (
+                                <button
+                                  key={opt}
+                                  type="button"
+                                  onClick={() => setVote(p.party_id, active ? null : opt)}
+                                  className={`flex-1 px-2 py-1.5 capitalize transition-colors ${
+                                    active ? "text-white" : "bg-background hover:bg-secondary text-foreground"
+                                  }`}
+                                  style={active ? { backgroundColor: VOTE_COLORS[opt] } : undefined}
+                                >
+                                  {opt}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </td>
                       </tr>
                     );
                   })}
@@ -301,12 +312,26 @@ function MajorityTool() {
             </section>
 
             <p className="text-xs text-muted-foreground">
-              Based on the latest election dashboard. Click any row to add or remove that party from the coalition.
+              Based on the latest election dashboard. Click a Yes/Abstain/No button to cast that party's bloc vote; click the active option again to unassign.
             </p>
           </>
         )}
       </div>
     </main>
+  );
+}
+
+function TallyStat({ label, value, total, color, muted }: { label: string; value: number; total: number; color: string; muted?: boolean }) {
+  const pct = total > 0 ? ((value / total) * 100).toFixed(1) : "0.0";
+  return (
+    <div className="flex items-center gap-2">
+      <span className="inline-block h-3 w-3 rounded-sm" style={{ backgroundColor: color, border: "1px solid rgba(0,0,0,0.08)" }} />
+      <span className={`text-xs ${muted ? "text-muted-foreground" : ""}`}>
+        <span className="font-semibold">{label}</span>{" "}
+        <span className="tabular-nums">{value}</span>{" "}
+        <span className="text-muted-foreground">({pct}%)</span>
+      </span>
+    </div>
   );
 }
 
