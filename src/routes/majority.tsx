@@ -216,7 +216,7 @@ function MajorityTool() {
 
               <div className="relative h-5 w-full rounded-full bg-secondary overflow-hidden">
                 {/* Stacked coalition segments */}
-                <div className="absolute inset-y-0 left-0 flex">
+                <div className="absolute inset-0 flex">
                   {seatedParties
                     .filter((p) => selected.has(p.party_id))
                     .map((p) => {
