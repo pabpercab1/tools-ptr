@@ -47,11 +47,11 @@ function autoParams(N: number, containerWidth: number) {
         ? rawSections
         : rawSections + 1;
   const seatRadius = Math.max(
-    2.5,
-    Math.min(14, (0.4 * R) / Math.sqrt(Math.max(1, N))),
+    3,
+    Math.min(14, Math.round((0.4 * R) / Math.sqrt(Math.max(1, N)))),
   );
-  const rowHeight = seatRadius * 2.33;
-  const sectionGap = Math.max(4, seatRadius * 2.89);
+  const rowHeight = Math.max(seatRadius * 2 + 1, Math.round(seatRadius * 2.33));
+  const sectionGap = Math.max(4, Math.round(seatRadius * 2.89));
   return { drawWidth, sections, seatRadius, rowHeight, sectionGap };
 }
 
@@ -200,11 +200,11 @@ export function ParliamentChart({ seats, totalSeats }: Props) {
                 <input
                   type="number"
                   min={1}
-                  step={0.5}
+                  step={1}
                   disabled={settings.auto}
                   value={effectiveSettings.seatRadius}
                   onChange={(e) =>
-                    setSettings((s) => ({ ...s, seatRadius: Number(e.target.value) || 1 }))
+                    setSettings((s) => ({ ...s, seatRadius: Math.max(1, Math.round(Number(e.target.value) || 1)) }))
                   }
                   className="h-7 w-16 rounded border border-input bg-background px-1.5 text-right tabular-nums disabled:opacity-50"
                 />
@@ -213,11 +213,11 @@ export function ParliamentChart({ seats, totalSeats }: Props) {
                 <input
                   type="number"
                   min={1}
-                  step={0.5}
+                  step={1}
                   disabled={settings.auto}
                   value={effectiveSettings.rowHeight}
                   onChange={(e) =>
-                    setSettings((s) => ({ ...s, rowHeight: Number(e.target.value) || 1 }))
+                    setSettings((s) => ({ ...s, rowHeight: Math.max(1, Math.round(Number(e.target.value) || 1)) }))
                   }
                   className="h-7 w-16 rounded border border-input bg-background px-1.5 text-right tabular-nums disabled:opacity-50"
                 />

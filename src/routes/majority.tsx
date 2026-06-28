@@ -67,7 +67,7 @@ function MajorityTool() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
 
   useEffect(() => {
-    jget<Nation[]>("/api/nations")
+    jget<Nation[]>("/nations")
       .then((ns) => {
         setNations(ns);
         if (ns.length > 0) setNationId(ns[0].id);
@@ -81,8 +81,8 @@ function MajorityTool() {
     setErr(null);
     setSelected(new Set());
     Promise.all([
-      jget<Dashboard>(`/api/nations/${nationId}/elections/dashboard`),
-      jget<Party[]>(`/api/parties?nation_id=${nationId}&active_only=true`),
+      jget<Dashboard>(`/nations/${nationId}/elections/dashboard`),
+      jget<Party[]>(`/parties?nation_id=${nationId}&active_only=true`),
     ])
       .then(([d, p]) => {
         setDashboard(d);
