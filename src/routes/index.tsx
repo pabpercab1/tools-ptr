@@ -467,14 +467,16 @@ function PollingTool() {
                       <th className="text-left font-medium px-3 py-2"></th>
                       <th className="text-left font-medium px-3 py-2">Party</th>
                       <th className="text-right font-medium px-3 py-2">Support</th>
-                      <th className="text-right font-medium px-3 py-2">Δ vs prior</th>
-                      <th className="text-right font-medium px-3 py-2">Seats</th>
+                      <th className="text-right font-medium px-3 py-2">Δ vs prior poll</th>
                       <th className="text-right font-medium px-3 py-2">Δ vs election</th>
+                      <th className="text-right font-medium px-3 py-2">Seats</th>
+                      <th className="text-right font-medium px-3 py-2">Δ seats vs election</th>
                     </tr>
                   </thead>
                   <tbody>
                     {rows.map((p) => {
                       const dPrior = p.prior_support_pct != null ? p.support_pct - p.prior_support_pct : null;
+                      const dElecPct = p.election_support_pct != null ? p.support_pct - p.election_support_pct : null;
                       const dElec = p.election_seats != null ? p.projected_seats - p.election_seats : null;
                       return (
                         <tr key={p.party_id} className="border-t border-border">
@@ -483,11 +485,12 @@ function PollingTool() {
                               <img
                                 src={partyLogos.get(p.party_id) as string}
                                 alt=""
-                                className="h-5 w-5 rounded-full object-cover bg-white border border-border"
+                                className="h-6 w-6 rounded-[3px] object-cover bg-white"
+                                style={{ outline: `1.5px solid ${safeColor(p.color)}`, outlineOffset: 0 }}
                               />
                             ) : (
                               <span
-                                className="inline-block h-3 w-3 rounded-sm border border-border"
+                                className="inline-block h-5 w-5 rounded-[3px] border border-border"
                                 style={{ backgroundColor: safeColor(p.color) }}
                               />
                             )}
@@ -501,10 +504,14 @@ function PollingTool() {
                           <td className="px-3 py-2 text-right tabular-nums">
                             {dPrior == null ? <span className="text-muted-foreground">—</span> : <DeltaPct v={dPrior} />}
                           </td>
+                          <td className="px-3 py-2 text-right tabular-nums">
+                            {dElecPct == null ? <span className="text-muted-foreground">—</span> : <DeltaPct v={dElecPct} />}
+                          </td>
                           <td className="px-3 py-2 text-right tabular-nums">{p.projected_seats}</td>
                           <td className="px-3 py-2 text-right tabular-nums">
                             {dElec == null ? <span className="text-muted-foreground">—</span> : <DeltaInt v={dElec} />}
                           </td>
+
                         </tr>
                       );
                     })}
