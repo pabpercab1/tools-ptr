@@ -352,11 +352,8 @@ function SimpleMajorityCard({ yes, no }: { yes: number; no: number }) {
         </span>
       </div>
       <div className="mt-3 text-lg font-bold tabular-nums">
-        <span>{yes}</span>
-        <span className="text-sm font-normal text-muted-foreground mx-1">Yes</span>
-        <span className="text-muted-foreground">—</span>
-        <span>{no}</span>
-        <span className="text-sm font-normal text-muted-foreground mx-1">No</span>
+        {yes}
+        <span className="text-sm font-normal text-muted-foreground"> / {no}</span>
       </div>
       <div className="text-[11px] text-muted-foreground tabular-nums">
         {marginText} <span className="text-foreground/60">({marginShort})</span>
