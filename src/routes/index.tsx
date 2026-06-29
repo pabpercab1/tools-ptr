@@ -138,6 +138,9 @@ function PollingTool() {
   const [timeline, setTimeline] = useState<PollDetail[]>([]);
   const [timelineLoading, setTimelineLoading] = useState(false);
 
+  // Party logos for the selected nation
+  const [partyLogos, setPartyLogos] = useState<Map<number, string | null>>(new Map());
+
   // Nations
   useEffect(() => {
     jget<Nation[]>("/nations")
@@ -147,6 +150,24 @@ function PollingTool() {
       })
       .catch((e) => setNationsErr(String(e.message || e)));
   }, []);
+
+  // Party logos when nation changes
+  useEffect(() => {
+    if (nationId == null) {
+      setPartyLogos(new Map());
+      return;
+    }
+    jget<Array<{ id: number; logo_url: string | null }>>(
+      `/parties?nation_id=${nationId}&active_only=true`,
+    )
+      .then((d) => {
+        const m = new Map<number, string | null>();
+        for (const p of d) m.set(p.id, p.logo_url ?? null);
+        setPartyLogos(m);
+      })
+      .catch(() => setPartyLogos(new Map()));
+  }, [nationId]);
+
 
   // Polls list when nation changes
   useEffect(() => {
