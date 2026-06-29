@@ -15,7 +15,7 @@ const API = "/api/ptr";
 const FALLBACK_COLOR = "#999999";
 
 type Nation = { id: number; name: string };
-type Party = { id: number; abbreviation: string; name: string; color: string | null };
+type Party = { id: number; abbreviation: string; name: string; color: string | null; logo_url: string | null };
 type DashboardParty = {
   party_id: number;
   party_name: string;
