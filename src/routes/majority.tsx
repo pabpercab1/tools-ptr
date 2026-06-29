@@ -182,13 +182,9 @@ function MajorityTool() {
           <>
             {/* Threshold summary */}
             <section className="grid gap-3 sm:grid-cols-3">
-              <ThresholdCard
-                label="Simple majority"
-                desc="More Yes votes than No votes"
-                current={tally.yes}
-                needed={tally.no + 1}
-                pass={tally.yes > tally.no && tally.yes > 0}
-                suffix={` (vs ${tally.no} No)`}
+              <SimpleMajorityCard
+                yes={tally.yes}
+                no={tally.no}
               />
               <ThresholdCard
                 label="Absolute majority (50%+1)"
