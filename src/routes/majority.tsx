@@ -182,13 +182,9 @@ function MajorityTool() {
           <>
             {/* Threshold summary */}
             <section className="grid gap-3 sm:grid-cols-3">
-              <ThresholdCard
-                label="Simple majority"
-                desc="More Yes votes than No votes"
-                current={tally.yes}
-                needed={tally.no + 1}
-                pass={tally.yes > tally.no && tally.yes > 0}
-                suffix={` (vs ${tally.no} No)`}
+              <SimpleMajorityCard
+                yes={tally.yes}
+                no={tally.no}
               />
               <ThresholdCard
                 label="Absolute majority (50%+1)"
@@ -331,6 +327,40 @@ function TallyStat({ label, value, total, color, muted }: { label: string; value
         <span className="tabular-nums">{value}</span>{" "}
         <span className="text-muted-foreground">({pct}%)</span>
       </span>
+    </div>
+  );
+}
+
+function SimpleMajorityCard({ yes, no }: { yes: number; no: number }) {
+  const pass = yes > no;
+  const margin = yes - no;
+  const marginText = margin === 0 ? "Tied" : margin > 0 ? `Yes ahead by ${margin}` : `No ahead by ${Math.abs(margin)}`;
+  const marginShort = margin === 0 ? "tied" : margin > 0 ? `+${margin} Yes` : `${margin} No`;
+  return (
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="text-xs font-semibold">Simple majority</div>
+          <div className="text-[11px] text-muted-foreground mt-0.5">More Yes votes than No votes</div>
+        </div>
+        <span
+          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
+            pass ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
+          }`}
+        >
+          {pass ? "✓ Yes wins" : "✗ No wins / tied"}
+        </span>
+      </div>
+      <div className="mt-3 text-lg font-bold tabular-nums">
+        <span>{yes}</span>
+        <span className="text-sm font-normal text-muted-foreground mx-1">Yes</span>
+        <span className="text-muted-foreground">—</span>
+        <span>{no}</span>
+        <span className="text-sm font-normal text-muted-foreground mx-1">No</span>
+      </div>
+      <div className="text-[11px] text-muted-foreground tabular-nums">
+        {marginText} <span className="text-foreground/60">({marginShort})</span>
+      </div>
     </div>
   );
 }
