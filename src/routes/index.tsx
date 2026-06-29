@@ -481,19 +481,21 @@ function PollingTool() {
                       return (
                         <tr key={p.party_id} className="border-t border-border">
                           <td className="px-3 py-2">
-                            {partyLogos.get(p.party_id) ? (
-                              <img
-                                src={partyLogos.get(p.party_id) as string}
-                                alt=""
-                                className="h-6 w-6 rounded-[3px] object-cover bg-white"
-                                style={{ outline: `1.5px solid ${safeColor(p.color)}`, outlineOffset: 0 }}
-                              />
-                            ) : (
-                              <span
-                                className="inline-block h-5 w-5 rounded-[3px] border border-border"
-                                style={{ backgroundColor: safeColor(p.color) }}
-                              />
-                            )}
+                            <div
+                              className="h-5 w-5 rounded-[3px] flex items-center justify-center overflow-hidden shrink-0 p-0.5"
+                              style={{
+                                backgroundColor: safeColor(p.color),
+                                border: `1.5px solid ${borderForColor(safeColor(p.color))}`,
+                              }}
+                            >
+                              {partyLogos.get(p.party_id) ? (
+                                <img
+                                  src={partyLogos.get(p.party_id) as string}
+                                  alt=""
+                                  className="h-full w-full object-contain"
+                                />
+                              ) : null}
+                            </div>
                           </td>
 
                           <td className="px-3 py-2">
