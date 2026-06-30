@@ -142,15 +142,7 @@ function PollingTool() {
   // Party logos for the selected nation
   const [partyLogos, setPartyLogos] = useState<Map<number, string | null>>(new Map());
 
-  // Nations
-  useEffect(() => {
-    jget<Nation[]>("/nations")
-      .then((d) => {
-        d.sort((a, b) => a.name.localeCompare(b.name));
-        setNations(d);
-      })
-      .catch((e) => setNationsErr(String(e.message || e)));
-  }, []);
+
 
   // Party logos when nation changes
   useEffect(() => {
