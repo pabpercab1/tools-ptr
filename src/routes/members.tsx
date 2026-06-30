@@ -26,15 +26,14 @@ export const Route = createFileRoute("/members")({
   ),
 });
 
-type Nation = { id: number; name: string };
-type Party = {
+type MyParty = {
   id: number;
   name: string;
   abbreviation: string;
   color: string | null;
   logo_url: string | null;
-  seat_count: number;
-  is_active: boolean;
+  seat_count?: number;
+  nation_id?: number;
 };
 type Position = {
   id: number;
@@ -68,9 +67,9 @@ function borderForColor(hex: string) {
 
 function MembersPage() {
   const { session, authFetch } = usePtrAuth();
-  const [nations, setNations] = useState<Nation[] | null>(null);
-  const [nationId, setNationId] = useState<number | null>(null);
-  const [parties, setParties] = useState<Party[] | null>(null);
+
+  const [myParties, setMyParties] = useState<MyParty[] | null>(null);
+  const [myPartiesErr, setMyPartiesErr] = useState<string | null>(null);
   const [partyId, setPartyId] = useState<number | null>(null);
 
   const [positions, setPositions] = useState<Position[] | null>(null);
@@ -78,53 +77,44 @@ function MembersPage() {
   const [figuresErr, setFiguresErr] = useState<string | null>(null);
   const [loadingFigures, setLoadingFigures] = useState(false);
 
+  // Fetch the signed-in user's party(ies)
   useEffect(() => {
-    fetch("/api/ptr/nations")
-      .then((r) => r.json())
-      .then((d: Nation[]) => {
-        const sorted = [...d].sort((a, b) => a.name.localeCompare(b.name));
-        setNations(sorted);
-        const saved = typeof window !== "undefined" ? localStorage.getItem("ptr.nationId") : null;
-        const initial = saved && sorted.find((n) => n.id === Number(saved))
-          ? Number(saved)
-          : sorted[0]?.id ?? null;
-        setNationId(initial);
+    if (!session) {
+      setMyParties(null);
+      setMyPartiesErr(null);
+      setPartyId(null);
+      return;
+    }
+    setMyPartiesErr(null);
+    setMyParties(null);
+    authFetch("/api/ptr/players/me/parties")
+      .then(async (r) => {
+        if (!r.ok) {
+          throw new Error(
+            r.status === 401
+              ? "Session expired. Please sign in again."
+              : `Failed to load your party (${r.status})`,
+          );
+        }
+        const data = await r.json();
+        const arr: MyParty[] = Array.isArray(data) ? data : data?.parties ?? [];
+        setMyParties(arr);
+        setPartyId(arr[0]?.id ?? null);
       })
-      .catch(() => setNations([]));
-  }, []);
-
-  useEffect(() => {
-    if (nationId == null) return;
-    if (typeof window !== "undefined") localStorage.setItem("ptr.nationId", String(nationId));
-    setParties(null);
-    setPartyId(null);
-    fetch(`/api/ptr/parties?nation_id=${nationId}&active_only=true`)
-      .then((r) => r.json())
-      .then((d: Party[]) => {
-        const sorted = [...d].sort((a, b) => (b.seat_count ?? 0) - (a.seat_count ?? 0));
-        setParties(sorted);
-        setPartyId(sorted[0]?.id ?? null);
-      })
-      .catch(() => setParties([]));
-  }, [nationId]);
+      .catch((e) => setMyPartiesErr((e as Error).message));
+  }, [session, authFetch]);
 
   const loadPartyDetail = useCallback(
     async (id: number) => {
       setPositions(null);
       setFigures(null);
       setFiguresErr(null);
-      // Positions endpoint is public
       try {
         const r = await fetch(`/api/ptr/parties/${id}/positions`);
         if (r.ok) setPositions(await r.json());
         else setPositions([]);
       } catch {
         setPositions([]);
-      }
-      // Figures endpoint requires auth
-      if (!session) {
-        setFigures(null);
-        return;
       }
       setLoadingFigures(true);
       try {
@@ -145,7 +135,7 @@ function MembersPage() {
         setLoadingFigures(false);
       }
     },
-    [authFetch, session],
+    [authFetch],
   );
 
   useEffect(() => {
@@ -153,15 +143,14 @@ function MembersPage() {
   }, [partyId, loadPartyDetail]);
 
   const selectedParty = useMemo(
-    () => parties?.find((p) => p.id === partyId) ?? null,
-    [parties, partyId],
+    () => myParties?.find((p) => p.id === partyId) ?? null,
+    [myParties, partyId],
   );
 
   const positionHolderIds = useMemo(() => {
     const m = new Map<number, string>();
     positions?.forEach((p) => {
-      if (p.current_holder)
-        m.set(p.current_holder.political_figure_id, p.title);
+      if (p.current_holder) m.set(p.current_holder.political_figure_id, p.title);
     });
     return m;
   }, [positions]);
@@ -182,154 +171,145 @@ function MembersPage() {
         <header className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight">Members</h1>
           <p className="text-sm text-muted-foreground">
-            Browse parties and their political figures. Sign in to load members.
+            Internal positions and political figures for your party.
           </p>
         </header>
 
-        <section className="grid gap-4 md:grid-cols-2">
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">
-              Nation
-            </label>
-            {!nations ? (
-              <div className="text-sm text-muted-foreground">Loading nations…</div>
-            ) : (
-              <select
-                className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                value={nationId ?? ""}
-                onChange={(e) => setNationId(e.target.value ? Number(e.target.value) : null)}
-              >
-                {nations.map((n) => (
-                  <option key={n.id} value={n.id}>{n.name}</option>
-                ))}
-              </select>
-            )}
+        {!session ? (
+          <div className="rounded-lg border border-dashed border-border bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+            Sign in (top-right) with your PR:R account to load your party's members.
           </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">
-              Party
-            </label>
-            {!parties ? (
-              <div className="text-sm text-muted-foreground">Loading parties…</div>
-            ) : parties.length === 0 ? (
-              <div className="text-sm text-muted-foreground">No active parties.</div>
-            ) : (
-              <select
-                className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                value={partyId ?? ""}
-                onChange={(e) => setPartyId(e.target.value ? Number(e.target.value) : null)}
-              >
-                {parties.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.abbreviation} — {p.name}
-                  </option>
-                ))}
-              </select>
-            )}
+        ) : myPartiesErr ? (
+          <div className="text-sm text-destructive">{myPartiesErr}</div>
+        ) : !myParties ? (
+          <div className="text-sm text-muted-foreground">Loading your party…</div>
+        ) : myParties.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+            Your account isn't linked to any party.
           </div>
-        </section>
-
-        {selectedParty && (
-          <section className="rounded-lg border border-border bg-card p-4">
-            <div className="flex items-center gap-3">
-              <PartyLogo party={selectedParty} />
+        ) : (
+          <>
+            {myParties.length > 1 && (
               <div>
-                <div className="text-sm font-semibold">{selectedParty.name}</div>
-                <div className="text-xs text-muted-foreground">
-                  {selectedParty.abbreviation} · {selectedParty.seat_count} seats
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
-        <section className="space-y-2">
-          <h2 className="text-sm font-semibold tracking-tight">Internal positions</h2>
-          {!positions ? (
-            <div className="text-sm text-muted-foreground">Loading…</div>
-          ) : positions.length === 0 ? (
-            <div className="text-sm text-muted-foreground">No internal positions defined.</div>
-          ) : (
-            <div className="rounded-lg border border-border overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
-                  <tr>
-                    <th className="text-left px-3 py-2 font-medium">Position</th>
-                    <th className="text-left px-3 py-2 font-medium">Holder</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {positions.map((p) => (
-                    <tr key={p.id} className="border-t border-border">
-                      <td className="px-3 py-2">{p.title}</td>
-                      <td className="px-3 py-2 text-muted-foreground">
-                        {p.current_holder?.name ?? <span className="italic">vacant</span>}
-                      </td>
-                    </tr>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">
+                  Party
+                </label>
+                <select
+                  className="w-full md:w-96 h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  value={partyId ?? ""}
+                  onChange={(e) => setPartyId(e.target.value ? Number(e.target.value) : null)}
+                >
+                  {myParties.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.abbreviation} — {p.name}
+                    </option>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
+                </select>
+              </div>
+            )}
 
-        <section className="space-y-2">
-          <h2 className="text-sm font-semibold tracking-tight">Political figures</h2>
-          {!session ? (
-            <div className="rounded-lg border border-dashed border-border bg-muted/30 p-6 text-center text-sm text-muted-foreground">
-              Sign in (top-right) with your PR:R account to load this party's members.
-            </div>
-          ) : loadingFigures ? (
-            <div className="text-sm text-muted-foreground">Loading members…</div>
-          ) : figuresErr ? (
-            <div className="text-sm text-destructive">{figuresErr}</div>
-          ) : !sortedFigures || sortedFigures.length === 0 ? (
-            <div className="text-sm text-muted-foreground">No members found.</div>
-          ) : (
-            <div className="rounded-lg border border-border overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
-                  <tr>
-                    <th className="text-left px-3 py-2 font-medium">Name</th>
-                    <th className="text-left px-3 py-2 font-medium">Role</th>
-                    <th className="text-right px-3 py-2 font-medium">Charisma</th>
-                    <th className="text-right px-3 py-2 font-medium">Experience</th>
-                    <th className="text-right px-3 py-2 font-medium">Age</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedFigures.map((f) => {
-                    const name = f.name ?? f.full_name ?? `Figure #${f.id}`;
-                    const role = positionHolderIds.get(f.id);
-                    return (
-                      <tr key={f.id} className="border-t border-border">
-                        <td className="px-3 py-2 font-medium">{name}</td>
-                        <td className="px-3 py-2">
-                          {role ? (
-                            <span className="inline-flex items-center rounded-full bg-foreground/5 px-2 py-0.5 text-xs font-medium">
-                              {role}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">Member</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2 text-right tabular-nums">{f.charisma ?? "—"}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{f.experience ?? "—"}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{f.age ?? "—"}</td>
+            {selectedParty && (
+              <section className="rounded-lg border border-border bg-card p-4">
+                <div className="flex items-center gap-3">
+                  <PartyLogo party={selectedParty} />
+                  <div>
+                    <div className="text-sm font-semibold">{selectedParty.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {selectedParty.abbreviation}
+                      {typeof selectedParty.seat_count === "number"
+                        ? ` · ${selectedParty.seat_count} seats`
+                        : ""}
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            <section className="space-y-2">
+              <h2 className="text-sm font-semibold tracking-tight">Internal positions</h2>
+              {!positions ? (
+                <div className="text-sm text-muted-foreground">Loading…</div>
+              ) : positions.length === 0 ? (
+                <div className="text-sm text-muted-foreground">No internal positions defined.</div>
+              ) : (
+                <div className="rounded-lg border border-border overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+                      <tr>
+                        <th className="text-left px-3 py-2 font-medium">Position</th>
+                        <th className="text-left px-3 py-2 font-medium">Holder</th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
+                    </thead>
+                    <tbody>
+                      {positions.map((p) => (
+                        <tr key={p.id} className="border-t border-border">
+                          <td className="px-3 py-2">{p.title}</td>
+                          <td className="px-3 py-2 text-muted-foreground">
+                            {p.current_holder?.name ?? <span className="italic">vacant</span>}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+
+            <section className="space-y-2">
+              <h2 className="text-sm font-semibold tracking-tight">Political figures</h2>
+              {loadingFigures ? (
+                <div className="text-sm text-muted-foreground">Loading members…</div>
+              ) : figuresErr ? (
+                <div className="text-sm text-destructive">{figuresErr}</div>
+              ) : !sortedFigures || sortedFigures.length === 0 ? (
+                <div className="text-sm text-muted-foreground">No members found.</div>
+              ) : (
+                <div className="rounded-lg border border-border overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+                      <tr>
+                        <th className="text-left px-3 py-2 font-medium">Name</th>
+                        <th className="text-left px-3 py-2 font-medium">Role</th>
+                        <th className="text-right px-3 py-2 font-medium">Charisma</th>
+                        <th className="text-right px-3 py-2 font-medium">Experience</th>
+                        <th className="text-right px-3 py-2 font-medium">Age</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedFigures.map((f) => {
+                        const name = f.name ?? f.full_name ?? `Figure #${f.id}`;
+                        const role = positionHolderIds.get(f.id);
+                        return (
+                          <tr key={f.id} className="border-t border-border">
+                            <td className="px-3 py-2 font-medium">{name}</td>
+                            <td className="px-3 py-2">
+                              {role ? (
+                                <span className="inline-flex items-center rounded-full bg-foreground/5 px-2 py-0.5 text-xs font-medium">
+                                  {role}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">Member</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-right tabular-nums">{f.charisma ?? "—"}</td>
+                            <td className="px-3 py-2 text-right tabular-nums">{f.experience ?? "—"}</td>
+                            <td className="px-3 py-2 text-right tabular-nums">{f.age ?? "—"}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+          </>
+        )}
       </main>
     </div>
   );
 }
 
-function PartyLogo({ party }: { party: Party }) {
+function PartyLogo({ party }: { party: MyParty }) {
   const color = party.color || "#999999";
   return (
     <div
@@ -337,11 +317,7 @@ function PartyLogo({ party }: { party: Party }) {
       style={{ background: color, border: `1.5px solid ${borderForColor(color)}` }}
     >
       {party.logo_url ? (
-        <img
-          src={party.logo_url}
-          alt=""
-          className="max-h-full max-w-full object-contain"
-        />
+        <img src={party.logo_url} alt="" className="max-h-full max-w-full object-contain" />
       ) : (
         <span className="text-[10px] font-bold text-white mix-blend-difference">
           {party.abbreviation.slice(0, 3)}
