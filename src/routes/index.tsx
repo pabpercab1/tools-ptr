@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { ParliamentChart } from "@/components/ParliamentChart";
+import { useNation } from "@/lib/nation-context";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -113,9 +114,9 @@ function dHondt(
 }
 
 function PollingTool() {
-  const [nations, setNations] = useState<Nation[] | null>(null);
-  const [nationsErr, setNationsErr] = useState<string | null>(null);
-  const [nationId, setNationId] = useState<number | null>(null);
+  const { nationId, selectedNation } = useNation();
+
+
 
   const [polls, setPolls] = useState<PollListItem[] | null>(null);
   const [pollsErr, setPollsErr] = useState<string | null>(null);
@@ -141,15 +142,7 @@ function PollingTool() {
   // Party logos for the selected nation
   const [partyLogos, setPartyLogos] = useState<Map<number, string | null>>(new Map());
 
-  // Nations
-  useEffect(() => {
-    jget<Nation[]>("/nations")
-      .then((d) => {
-        d.sort((a, b) => a.name.localeCompare(b.name));
-        setNations(d);
-      })
-      .catch((e) => setNationsErr(String(e.message || e)));
-  }, []);
+
 
   // Party logos when nation changes
   useEffect(() => {
@@ -236,7 +229,7 @@ function PollingTool() {
     };
   }, [nationId, polls]);
 
-  const selectedNation = nations?.find((n) => n.id === nationId) ?? null;
+  
 
   // D'Hondt estimate based on current poll + user-set total seats & threshold
   const estimate = useMemo(() => {
@@ -296,28 +289,8 @@ function PollingTool() {
             Visualise fictional election polls and compare with previous results.
           </p>
         </header>
-        <section className="grid gap-4 md:grid-cols-2">
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">
-              Nation
-            </label>
-            {nationsErr ? (
-              <div className="text-sm text-destructive">Failed to load nations: {nationsErr}</div>
-            ) : !nations ? (
-              <div className="text-sm text-muted-foreground">Loading nations…</div>
-            ) : (
-              <select
-                className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                value={nationId ?? ""}
-                onChange={(e) => setNationId(e.target.value ? Number(e.target.value) : null)}
-              >
-                <option value="">Select a nation…</option>
-                {nations.map((n) => (
-                  <option key={n.id} value={n.id}>{n.name}</option>
-                ))}
-              </select>
-            )}
-          </div>
+        <section className="grid gap-4 md:grid-cols-1">
+
 
           <div>
             <label className="block text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">

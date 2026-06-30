@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useNation } from "@/lib/nation-context";
 
 export const Route = createFileRoute("/majority")({
   head: () => ({
@@ -55,9 +56,7 @@ async function jget<T>(path: string): Promise<T> {
 }
 
 function MajorityTool() {
-  const [nations, setNations] = useState<Nation[]>([]);
-  const [nationId, setNationId] = useState<number | null>(null);
-  const [nationsErr, setNationsErr] = useState<string | null>(null);
+  const { nationId } = useNation();
 
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [parties, setParties] = useState<Party[]>([]);
@@ -67,14 +66,7 @@ function MajorityTool() {
   type Vote = "yes" | "abstain" | "no";
   const [votes, setVotes] = useState<Map<number, Vote>>(new Map());
 
-  useEffect(() => {
-    jget<Nation[]>("/nations")
-      .then((ns) => {
-        setNations(ns);
-        if (ns.length > 0) setNationId(ns[0].id);
-      })
-      .catch((e) => setNationsErr(e.message || "Failed to load nations"));
-  }, []);
+
 
   useEffect(() => {
     if (nationId == null) return;
@@ -153,25 +145,7 @@ function MajorityTool() {
           </p>
         </header>
 
-        <section className="rounded-lg border border-border bg-card p-4 sm:p-5 space-y-3">
-          <label className="block text-xs font-medium text-muted-foreground">Nation</label>
-          {nationsErr ? (
-            <div className="text-sm text-destructive">{nationsErr}</div>
-          ) : (
-            <select
-              className="w-full sm:w-80 rounded-md border border-input bg-background px-3 py-2 text-sm"
-              value={nationId ?? ""}
-              onChange={(e) => setNationId(Number(e.target.value))}
-            >
-              {nations.length === 0 && <option value="">Loading…</option>}
-              {nations.map((n) => (
-                <option key={n.id} value={n.id}>
-                  {n.name}
-                </option>
-              ))}
-            </select>
-          )}
-        </section>
+
 
         {loading && (
           <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
