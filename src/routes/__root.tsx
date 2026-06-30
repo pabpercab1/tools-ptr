@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { PtrAuthProvider } from "../lib/ptr-auth";
+import { NationProvider, useNation } from "../lib/nation-context";
 import { SignInBadge } from "../components/SignInBadge";
 
 function NotFoundComponent() {
@@ -123,41 +124,68 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <PtrAuthProvider>
-        <nav className="border-b border-border bg-card">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6 flex items-center gap-1 h-12">
-            <span className="text-sm font-semibold tracking-tight text-foreground mr-4">PR:R Tools</span>
-            <Link
-              to="/"
-              activeOptions={{ exact: true }}
-              activeProps={{ className: "text-foreground border-foreground" }}
-              inactiveProps={{ className: "text-muted-foreground border-transparent hover:text-foreground" }}
-              className="text-xs font-medium px-3 h-12 inline-flex items-center border-b-2 transition-colors"
-            >
-              Polling
-            </Link>
-            <Link
-              to="/majority"
-              activeProps={{ className: "text-foreground border-foreground" }}
-              inactiveProps={{ className: "text-muted-foreground border-transparent hover:text-foreground" }}
-              className="text-xs font-medium px-3 h-12 inline-flex items-center border-b-2 transition-colors"
-            >
-              Majority calculator
-            </Link>
-            <Link
-              to="/members"
-              activeProps={{ className: "text-foreground border-foreground" }}
-              inactiveProps={{ className: "text-muted-foreground border-transparent hover:text-foreground" }}
-              className="text-xs font-medium px-3 h-12 inline-flex items-center border-b-2 transition-colors"
-            >
-              Members
-            </Link>
-            <SignInBadge />
-          </div>
-        </nav>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
+        <NationProvider>
+          <nav className="border-b border-border bg-card">
+            <div className="mx-auto max-w-6xl px-4 sm:px-6 flex items-center gap-1 h-12">
+              <span className="text-sm font-semibold tracking-tight text-foreground mr-4">PR:R Tools</span>
+              <Link
+                to="/"
+                activeOptions={{ exact: true }}
+                activeProps={{ className: "text-foreground border-foreground" }}
+                inactiveProps={{ className: "text-muted-foreground border-transparent hover:text-foreground" }}
+                className="text-xs font-medium px-3 h-12 inline-flex items-center border-b-2 transition-colors"
+              >
+                Polling
+              </Link>
+              <Link
+                to="/majority"
+                activeProps={{ className: "text-foreground border-foreground" }}
+                inactiveProps={{ className: "text-muted-foreground border-transparent hover:text-foreground" }}
+                className="text-xs font-medium px-3 h-12 inline-flex items-center border-b-2 transition-colors"
+              >
+                Majority calculator
+              </Link>
+              <Link
+                to="/members"
+                activeProps={{ className: "text-foreground border-foreground" }}
+                inactiveProps={{ className: "text-muted-foreground border-transparent hover:text-foreground" }}
+                className="text-xs font-medium px-3 h-12 inline-flex items-center border-b-2 transition-colors"
+              >
+                Members
+              </Link>
+              <div className="ml-auto flex items-center gap-2">
+                <NationPicker />
+                <SignInBadge />
+              </div>
+            </div>
+          </nav>
+          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <Outlet />
+        </NationProvider>
       </PtrAuthProvider>
     </QueryClientProvider>
+  );
+}
+
+function NationPicker() {
+  const { nations, nationsErr, nationId, setNationId } = useNation();
+  if (nationsErr) {
+    return <span className="text-xs text-destructive">Nations failed</span>;
+  }
+  if (!nations) {
+    return <span className="text-xs text-muted-foreground">Loading…</span>;
+  }
+  return (
+    <select
+      aria-label="Nation"
+      className="h-8 rounded-md border border-input bg-background px-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+      value={nationId ?? ""}
+      onChange={(e) => setNationId(e.target.value ? Number(e.target.value) : null)}
+    >
+      {nations.map((n) => (
+        <option key={n.id} value={n.id}>{n.name}</option>
+      ))}
+    </select>
   );
 }
 
