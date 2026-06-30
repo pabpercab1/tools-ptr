@@ -9,10 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as MembersRouteImport } from './routes/members'
 import { Route as MajorityRouteImport } from './routes/majority'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPtrSplatRouteImport } from './routes/api/ptr.$'
 
+const MembersRoute = MembersRouteImport.update({
+  id: '/members',
+  path: '/members',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MajorityRoute = MajorityRouteImport.update({
   id: '/majority',
   path: '/majority',
@@ -32,35 +38,46 @@ const ApiPtrSplatRoute = ApiPtrSplatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/majority': typeof MajorityRoute
+  '/members': typeof MembersRoute
   '/api/ptr/$': typeof ApiPtrSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/majority': typeof MajorityRoute
+  '/members': typeof MembersRoute
   '/api/ptr/$': typeof ApiPtrSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/majority': typeof MajorityRoute
+  '/members': typeof MembersRoute
   '/api/ptr/$': typeof ApiPtrSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/majority' | '/api/ptr/$'
+  fullPaths: '/' | '/majority' | '/members' | '/api/ptr/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/majority' | '/api/ptr/$'
-  id: '__root__' | '/' | '/majority' | '/api/ptr/$'
+  to: '/' | '/majority' | '/members' | '/api/ptr/$'
+  id: '__root__' | '/' | '/majority' | '/members' | '/api/ptr/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   MajorityRoute: typeof MajorityRoute
+  MembersRoute: typeof MembersRoute
   ApiPtrSplatRoute: typeof ApiPtrSplatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/members': {
+      id: '/members'
+      path: '/members'
+      fullPath: '/members'
+      preLoaderRoute: typeof MembersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/majority': {
       id: '/majority'
       path: '/majority'
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   MajorityRoute: MajorityRoute,
+  MembersRoute: MembersRoute,
   ApiPtrSplatRoute: ApiPtrSplatRoute,
 }
 export const routeTree = rootRouteImport
