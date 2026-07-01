@@ -164,6 +164,29 @@ function PollingTool() {
       .catch(() => setPartyLogos(new Map()));
   }, [nationId]);
 
+  // Government status when nation changes
+  useEffect(() => {
+    if (nationId == null) {
+      setGovStatus(new Map());
+      return;
+    }
+    jget<{
+      members?: Array<{ party_id: number }>;
+      confidence_partners?: Array<{ party_id: number }>;
+    }>(`/nations/${nationId}/government`)
+      .then((g) => {
+        const m = new Map<number, "govt" | "supp">();
+        for (const cp of g.confidence_partners ?? []) {
+          if (cp?.party_id != null) m.set(cp.party_id, "supp");
+        }
+        for (const mem of g.members ?? []) {
+          if (mem?.party_id != null) m.set(mem.party_id, "govt"); // govt overrides supp
+        }
+        setGovStatus(m);
+      })
+      .catch(() => setGovStatus(new Map()));
+  }, [nationId]);
+
 
   // Polls list when nation changes
   useEffect(() => {
