@@ -582,12 +582,14 @@ function BarChart({
   maxValue,
   totalSeats,
   showPrevious,
+  govStatus,
 }: {
   rows: PollParty[];
   mode: "poll" | "seats";
   maxValue: number;
   totalSeats: number;
   showPrevious: boolean;
+  govStatus: Map<number, "govt" | "supp">;
 }) {
   const top = Math.max(10, Math.ceil(maxValue / 10) * 10);
   const ticks = Array.from({ length: top / 10 + 1 }, (_, i) => i * 10);
