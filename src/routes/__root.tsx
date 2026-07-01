@@ -135,6 +135,14 @@ function RootComponent() {
                 inactiveProps={{ className: "text-muted-foreground border-transparent hover:text-foreground" }}
                 className="text-xs font-medium px-3 h-12 inline-flex items-center border-b-2 transition-colors"
               >
+                Home
+              </Link>
+              <Link
+                to="/polls"
+                activeProps={{ className: "text-foreground border-foreground" }}
+                inactiveProps={{ className: "text-muted-foreground border-transparent hover:text-foreground" }}
+                className="text-xs font-medium px-3 h-12 inline-flex items-center border-b-2 transition-colors"
+              >
                 Polling
               </Link>
               <Link
