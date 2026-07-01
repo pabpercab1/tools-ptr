@@ -87,8 +87,9 @@ function MembersPage() {
     }
     setMyPartiesErr(null);
     setMyParties(null);
-    authFetch("/api/ptr/players/me/parties")
-      .then(async (r) => {
+    (async () => {
+      try {
+        const r = await authFetch("/api/ptr/players/me/parties");
         if (!r.ok) {
           throw new Error(
             r.status === 401
@@ -97,11 +98,45 @@ function MembersPage() {
           );
         }
         const data = await r.json();
-        const arr: MyParty[] = Array.isArray(data) ? data : data?.parties ?? [];
-        setMyParties(arr);
-        setPartyId(arr[0]?.id ?? null);
-      })
-      .catch((e) => setMyPartiesErr((e as Error).message));
+        const raw: any[] = Array.isArray(data) ? data : data?.parties ?? [];
+        // Normalize: endpoint returns { party_id, party_name, nation_id, role, ... }
+        const normalized: MyParty[] = raw.map((p) => ({
+          id: p.id ?? p.party_id,
+          name: p.name ?? p.party_name ?? "",
+          abbreviation: p.abbreviation ?? "",
+          color: p.color ?? null,
+          logo_url: p.logo_url ?? null,
+          seat_count: p.seat_count,
+          nation_id: p.nation_id,
+        }));
+        // Enrich missing fields (abbreviation/color/logo) from /parties/{id}
+        const enriched = await Promise.all(
+          normalized.map(async (p) => {
+            if (p.abbreviation && p.color) return p;
+            try {
+              const d = await fetch(`/api/ptr/parties/${p.id}`);
+              if (!d.ok) return p;
+              const j = await d.json();
+              return {
+                ...p,
+                name: p.name || j.name,
+                abbreviation: p.abbreviation || j.abbreviation || "",
+                color: p.color || j.color || null,
+                logo_url: p.logo_url || j.logo_url || null,
+                seat_count: p.seat_count ?? j.seat_count,
+                nation_id: p.nation_id ?? j.nation_id,
+              } as MyParty;
+            } catch {
+              return p;
+            }
+          }),
+        );
+        setMyParties(enriched);
+        setPartyId(enriched[0]?.id ?? null);
+      } catch (e) {
+        setMyPartiesErr((e as Error).message);
+      }
+    })();
   }, [session, authFetch]);
 
   const loadPartyDetail = useCallback(
