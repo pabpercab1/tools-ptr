@@ -599,7 +599,10 @@ function BarChart({
   return (
     <div className="rounded-lg border border-border bg-card p-5">
       {/* Legend */}
-      <div className="flex justify-end items-center gap-4 mb-3 text-[10px] text-muted-foreground">
+      <div
+        data-chart-legend
+        className="flex justify-end items-center gap-4 mb-3 text-[10px] text-muted-foreground"
+      >
         <span className="inline-flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-sm bg-slate-700" />
           Latest poll
