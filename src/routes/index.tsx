@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toPng, toJpeg } from "html-to-image";
 import { ParliamentChart } from "@/components/ParliamentChart";
 import { useNation } from "@/lib/nation-context";
 
