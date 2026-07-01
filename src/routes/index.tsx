@@ -710,10 +710,11 @@ function BarChart({
         <div className="flex gap-2 px-1 mt-2">
           {rows.map((p) => {
             const color = safeColor(p.color);
+            const status = govStatus.get(p.party_id);
             return (
               <div
                 key={p.party_id}
-                className="flex-1 min-w-0 flex flex-col items-center gap-1"
+                className="flex-1 min-w-0 flex flex-col items-center gap-0.5"
               >
                 <span
                   className="h-1 w-6 rounded-full"
@@ -722,6 +723,15 @@ function BarChart({
                 <span className="text-[10px] font-medium truncate max-w-full">
                   {p.abbreviation}
                 </span>
+                {status && (
+                  <span
+                    className="text-[8px] uppercase tracking-wider font-semibold leading-none"
+                    style={{ color: status === "govt" ? "#334155" : "#64748b" }}
+                    title={status === "govt" ? "In government" : "Confidence & supply partner"}
+                  >
+                    {status === "govt" ? "Govt" : "Supp"}
+                  </span>
+                )}
               </div>
             );
           })}
