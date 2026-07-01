@@ -232,18 +232,27 @@ function PollingTool() {
   // Selected poll detail
   useEffect(() => {
     if (nationId == null || pollId == null) return;
+    // Guard: only fetch if pollId belongs to the current nation's polls list.
+    // Prevents a stale pollId from a previously-selected nation triggering a 404.
+    if (!polls || !polls.some((p) => p.id === pollId)) return;
+    let cancelled = false;
     setPollLoading(true);
     setPollErr(null);
     jget<PollDetail>(`/nations/${nationId}/polls/${pollId}`)
       .then((d) => {
+        if (cancelled) return;
         setPoll(d);
         setPollLoading(false);
       })
       .catch((e) => {
+        if (cancelled) return;
         setPollErr(String(e.message || e));
         setPollLoading(false);
       });
-  }, [nationId, pollId]);
+    return () => {
+      cancelled = true;
+    };
+  }, [nationId, pollId, polls]);
 
   // Fetch all polls for timeline (in parallel)
   useEffect(() => {
