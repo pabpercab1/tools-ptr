@@ -313,6 +313,42 @@ function PollingTool() {
           )
         : 50;
 
+  const handleExport = async () => {
+    const node = chartRef.current;
+    if (!node || !poll) return;
+    setExportBusy(true);
+    const hidden: Array<{ el: HTMLElement; prev: string }> = [];
+    if (!exportLegend) {
+      node.querySelectorAll<HTMLElement>("[data-chart-legend]").forEach((el) => {
+        hidden.push({ el, prev: el.style.display });
+        el.style.display = "none";
+      });
+    }
+    try {
+      const opts = {
+        pixelRatio: 2,
+        backgroundColor: "#ffffff",
+        cacheBust: true,
+      };
+      const dataUrl =
+        exportFormat === "png"
+          ? await toPng(node, opts)
+          : await toJpeg(node, { ...opts, quality: 0.95 });
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = `ptr-${slugify(selectedNation?.name ?? "nation")}-${poll.game_month}-${mode}.${exportFormat}`;
+      a.click();
+    } catch (e) {
+      console.error("Export failed", e);
+    } finally {
+      hidden.forEach(({ el, prev }) => {
+        el.style.display = prev;
+      });
+      setExportBusy(false);
+    }
+  };
+
+
 
   return (
     <div className="min-h-screen bg-background text-foreground">
