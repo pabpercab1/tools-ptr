@@ -146,6 +146,13 @@ function PollingTool() {
   // Government status per party: "govt" (cabinet member) or "supp" (confidence partner)
   const [govStatus, setGovStatus] = useState<Map<number, "govt" | "supp">>(new Map());
 
+  // Chart export state
+  const chartRef = useRef<HTMLDivElement | null>(null);
+  const [exportFormat, setExportFormat] = useState<"png" | "jpg">("png");
+  const [exportLegend, setExportLegend] = useState(true);
+  const [exportBusy, setExportBusy] = useState(false);
+
+
 
 
   // Party logos when nation changes
