@@ -237,10 +237,10 @@ export function ParliamentChart({ seats, totalSeats }: Props) {
           <svg ref={svgRef} />
         </div>
       </div>
-      <div className="text-center text-xs text-muted-foreground">
+      <div data-chart-legend className="text-center text-xs text-muted-foreground">
         {allocated} of {totalSeats} seats allocated
       </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-3 md:grid-cols-4 text-xs">
+      <div data-chart-legend className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-3 md:grid-cols-4 text-xs">
         {legend.map((p) => (
           <div key={p.partyId} className="flex items-center gap-2 min-w-0">
             <span
