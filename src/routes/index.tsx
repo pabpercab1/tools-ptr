@@ -453,6 +453,7 @@ function PollingTool() {
                 maxValue={maxValue}
                 totalSeats={effectiveTotalSeats}
                 showPrevious={effectiveShowPrevious}
+                govStatus={govStatus}
               />
             )}
 
