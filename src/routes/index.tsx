@@ -57,9 +57,7 @@ function HomePage() {
       <header className="mb-10">
         <h1 className="text-3xl font-semibold tracking-tight text-foreground">PR:R Tools</h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          A small collection of tools for the PR:R universe: visualise fictional election polling in
-          a EuropeElects style, compute parliamentary majorities, and browse party members across
-          nations. Data comes live from <code className="text-xs">api.ptr.zanz2.dev</code>.
+          A small collection of tools for PR:R: visualise election polling, create estimates, download the charts, compute parliamentary majorities, and browse party members across nations. Data comes live from <code className="text-xs">api.ptr.zanz2.dev</code>.
         </p>
       </header>
 
