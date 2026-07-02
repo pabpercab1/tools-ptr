@@ -16,6 +16,7 @@ export type ParliamentSeat = {
 type Props = {
   seats: ParliamentSeat[];
   totalSeats: number;
+  hiddenPartyIds?: number[];
 };
 
 function orderForHemicycle(parties: ParliamentSeat[]): ParliamentSeat[] {
@@ -60,7 +61,9 @@ type Settings = {
 
 type EffectiveSettings = Settings & { drawWidth: number };
 
-export function ParliamentChart({ seats, totalSeats }: Props) {
+export function ParliamentChart({ seats, totalSeats, hiddenPartyIds = [] }: Props) {
+    const hiddenPartySet = useMemo(() => new Set(hiddenPartyIds), [hiddenPartyIds]);
+
   const containerRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [width, setWidth] = useState(640);
@@ -144,13 +147,15 @@ export function ParliamentChart({ seats, totalSeats }: Props) {
       .attr("stroke-width", 0.75);
   }, [seats, width, effectiveSettings]);
 
-  const legend = [...seats].filter((s) => s.seats > 0).sort((a, b) => b.seats - a.seats);
+  const legend = [...seats]
+    .filter((s) => s.seats > 0 && !hiddenPartySet.has(s.partyId))
+    .sort((a, b) => b.seats - a.seats);
   const allocated = legend.reduce((s, p) => s + p.seats, 0);
 
   return (
     <div className="space-y-4">
       <div className="relative">
-        <div className="absolute right-0 top-0 z-10">
+        <div className="absolute right-0 top-0 z-10" data-export-ignore>
           <button
             type="button"
             onClick={() => setSettingsOpen((v) => !v)}

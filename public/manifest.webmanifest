@@ -1,0 +1,25 @@
+{
+  "id": "/",
+  "name": "PR:R Tools",
+  "short_name": "PR:R Tools",
+  "description": "Set of tools for PT:R",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1f2937",
+  "icons": [
+    {
+      "src": "/icons/pwa-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/pwa-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

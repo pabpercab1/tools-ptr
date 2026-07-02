@@ -10,7 +10,14 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import ptrLogoAsset from "../assets/ptr-logo.png.asset.json";
+import logoUrl from "../assets/logo.png";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { PtrAuthProvider } from "../lib/ptr-auth";
 import { NationProvider, useNation } from "../lib/nation-context";
@@ -81,6 +88,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "theme-color", content: "#1f2937" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-title", content: "PR:R Tools" },
       { title: "PR:R Tools" },
       { name: "description", content: "Set of tools for PT:R" },
       { property: "og:title", content: "PR:R Tools" },
@@ -96,7 +107,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" },
-      { rel: "icon", type: "image/png", href: ptrLogoAsset.url },
+      { rel: "icon", type: "image/png", href: logoUrl },
+      { rel: "apple-touch-icon", href: "/icons/pwa-192.svg" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "stylesheet", href: appCss },
     ],
   }),
@@ -123,50 +136,70 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useEffect(() => {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+
+    // In dev, stale service workers can cache older route bundles and break hydration.
+    if (import.meta.env.DEV) {
+      void navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((registration) => {
+          void registration.unregister();
+        });
+      });
+      return;
+    }
+
+    void navigator.serviceWorker.register("/sw.js").catch((error) => {
+      console.error("Service worker registration failed", error);
+    });
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <PtrAuthProvider>
         <NationProvider>
-          <nav className="border-b border-border bg-card">
-            <div className="mx-auto max-w-6xl px-4 sm:px-6 flex items-center gap-1 h-12">
-              <img src={ptrLogoAsset.url} alt="PR:R Tools" className="h-7 w-7 rounded-sm" />
-              <span className="text-sm font-semibold tracking-tight text-foreground mr-4">PR:R Tools</span>
-              <Link
-                to="/"
-                activeOptions={{ exact: true }}
-                activeProps={{ className: "text-foreground border-foreground" }}
-                inactiveProps={{ className: "text-muted-foreground border-transparent hover:text-foreground" }}
-                className="text-xs font-medium px-3 h-12 inline-flex items-center border-b-2 transition-colors"
-              >
-                Home
-              </Link>
-              <Link
-                to="/polls"
-                activeProps={{ className: "text-foreground border-foreground" }}
-                inactiveProps={{ className: "text-muted-foreground border-transparent hover:text-foreground" }}
-                className="text-xs font-medium px-3 h-12 inline-flex items-center border-b-2 transition-colors"
-              >
-                Polling
-              </Link>
-              <Link
-                to="/majority"
-                activeProps={{ className: "text-foreground border-foreground" }}
-                inactiveProps={{ className: "text-muted-foreground border-transparent hover:text-foreground" }}
-                className="text-xs font-medium px-3 h-12 inline-flex items-center border-b-2 transition-colors"
-              >
-                Majority calculator
-              </Link>
-              <Link
-                to="/members"
-                activeProps={{ className: "text-foreground border-foreground" }}
-                inactiveProps={{ className: "text-muted-foreground border-transparent hover:text-foreground" }}
-                className="text-xs font-medium px-3 h-12 inline-flex items-center border-b-2 transition-colors"
-              >
-                Members
-              </Link>
-              <div className="ml-auto flex items-center gap-2">
-                <NationPicker />
-                <SignInBadge />
+          <nav className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+            <div className="px-3 sm:px-6">
+              <div className="flex flex-col md:flex-row md:items-stretch md:h-11">
+
+                {/* Logo + title */}
+                <div className="flex items-center gap-2 shrink-0 py-2 md:py-0 md:pr-4">
+                  <img src={logoUrl} alt="PR:R Tools" className="h-6 w-6 rounded-sm" />
+                  <span className="text-sm font-semibold tracking-tight text-foreground">PR:R Tools</span>
+                </div>
+
+                {/* Nav links – stretch to full nav height so border-b aligns with nav bottom */}
+                <div className="flex items-stretch gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:flex-1 md:overflow-visible">
+                  {(
+                    [
+                      { to: "/", label: "Home", exact: true },
+                      { to: "/polls", label: "Polling" },
+                      { to: "/majority", label: "Majority calculator" },
+                      { to: "/members", label: "Members" },
+                      { to: "/party-primary", label: "Party Primary" },
+                    ] as const
+                  ).map(({ to, label, exact }) => (
+                    <Link
+                      key={to}
+                      to={to}
+                      activeOptions={exact ? { exact: true } : undefined}
+                      activeProps={{ className: "text-foreground border-foreground" }}
+                      inactiveProps={{ className: "text-muted-foreground border-transparent hover:text-foreground" }}
+                      className="shrink-0 text-xs font-medium px-2.5 flex items-center border-b-2 transition-colors mb-[-1px]"
+                    >
+                      {label}
+                    </Link>
+                  ))}
+                </div>
+
+                {/* Nation picker + sign in */}
+                <div className="flex flex-wrap items-center gap-2 pb-2 md:pb-0 md:ml-auto md:flex-nowrap">
+                  <div className="w-full sm:w-auto sm:min-w-[190px] md:w-auto">
+                    <NationPicker />
+                  </div>
+                  <SignInBadge />
+                </div>
+
               </div>
             </div>
           </nav>
@@ -179,7 +212,7 @@ function RootComponent() {
 }
 
 function NationPicker() {
-  const { nations, nationsErr, nationId, setNationId } = useNation();
+  const { nations, nationsErr, nationId, selectedNation, setNationId } = useNation();
   if (nationsErr) {
     return <span className="text-xs text-destructive">Nations failed</span>;
   }
@@ -187,16 +220,55 @@ function NationPicker() {
     return <span className="text-xs text-muted-foreground">Loading…</span>;
   }
   return (
-    <select
-      aria-label="Nation"
-      className="h-8 rounded-md border border-input bg-background px-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
-      value={nationId ?? ""}
-      onChange={(e) => setNationId(e.target.value ? Number(e.target.value) : null)}
+    <Select
+      value={nationId != null ? String(nationId) : "__none__"}
+      onValueChange={(value) => setNationId(value === "__none__" ? null : Number(value))}
     >
-      {nations.map((n) => (
-        <option key={n.id} value={n.id}>{n.name}</option>
-      ))}
-    </select>
+      <SelectTrigger aria-label="Nation" className="h-7 w-full sm:w-[175px] gap-1.5 px-2 text-xs">
+        {selectedNation ? (
+          <div className="flex min-w-0 items-center gap-2">
+            <FlagPreview flagUrl={selectedNation.flagUrl} nationName={selectedNation.name} />
+            <span className="truncate">{selectedNation.name}</span>
+          </div>
+        ) : (
+          <SelectValue placeholder="Select nation" />
+        )}
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="__none__">Select nation</SelectItem>
+        {nations.map((nation) => (
+          <SelectItem key={nation.id} value={String(nation.id)}>
+            <span className="flex items-center gap-2">
+              <FlagPreview flagUrl={nation.flagUrl} nationName={nation.name} />
+              <span>{nation.name}</span>
+            </span>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function FlagPreview({
+  flagUrl,
+  nationName,
+}: {
+  flagUrl: string | null;
+  nationName: string;
+}) {
+  return (
+    <span
+      className="inline-flex h-[13px] w-[19px] shrink-0 overflow-hidden rounded-[2px] border border-border bg-muted"
+      aria-hidden={!flagUrl}
+    >
+      {flagUrl && (
+        <img
+          src={flagUrl}
+          alt={`Flag of ${nationName}`}
+          className="h-full w-full object-cover"
+        />
+      )}
+    </span>
   );
 }
 

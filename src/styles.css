@@ -57,14 +57,28 @@
 }
 
 @layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
   * {
     border-color: var(--color-border);
   }
+
   body {
+    min-height: 100dvh;
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
     font-feature-settings: "cv11", "ss01";
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    touch-action: manipulation;
   }
 }

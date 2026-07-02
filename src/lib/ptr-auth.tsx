@@ -23,6 +23,8 @@ type StoredSession = {
 type AuthCtx = {
   session: StoredSession | null;
   login: (email: string, password: string) => Promise<void>;
+  loginWithDiscord: () => void;
+  loginWithBearerToken: (token: string) => Promise<void>;
   logout: () => void;
   authFetch: (path: string, init?: RequestInit) => Promise<Response>;
 };
@@ -80,6 +82,45 @@ async function exchangePassword(email: string, password: string): Promise<Stored
   };
 }
 
+async function fetchOAuthUser(access_token: string): Promise<string> {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${access_token}`,
+    },
+  });
+  if (!res.ok) return "";
+  const j = (await res.json()) as { email?: string };
+  return j.email ?? "";
+}
+
+async function validateBearerToken(token: string): Promise<StoredSession> {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    let msg = "Invalid or expired token";
+    try {
+      const j = JSON.parse(text);
+      msg = j.error_description || j.msg || j.error || msg;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(msg);
+  }
+  const j = (await res.json()) as { email?: string };
+  return {
+    access_token: token,
+    refresh_token: "",
+    expires_at: Math.floor(Date.now() / 1000) + 3600,
+    email: j.email ?? "",
+  };
+}
+
 async function refreshSession(refresh_token: string): Promise<StoredSession> {
   const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
     method: "POST",
@@ -109,6 +150,28 @@ export function PtrAuthProvider({ children }: { children: ReactNode }) {
   const sessionRef = useRef<StoredSession | null>(null);
 
   useEffect(() => {
+    // Handle OAuth callback — tokens arrive in the URL hash
+    const hash = window.location.hash.slice(1);
+    if (hash.includes("access_token=")) {
+      const params = new URLSearchParams(hash);
+      const access_token = params.get("access_token");
+      const refresh_token = params.get("refresh_token");
+      const expires_at_raw = params.get("expires_at");
+      const expires_in_raw = params.get("expires_in");
+      if (access_token && refresh_token) {
+        const expires_at = expires_at_raw
+          ? Number(expires_at_raw)
+          : Math.floor(Date.now() / 1000) + Number(expires_in_raw ?? 3600);
+        history.replaceState(null, "", window.location.pathname + window.location.search);
+        fetchOAuthUser(access_token).then((email) => {
+          const s: StoredSession = { access_token, refresh_token, expires_at, email };
+          sessionRef.current = s;
+          setSession(s);
+          writeStored(s);
+        });
+        return;
+      }
+    }
     const s = readStored();
     if (s) {
       setSession(s);
@@ -132,6 +195,19 @@ export function PtrAuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => update(null), [update]);
 
+  const loginWithDiscord = useCallback(() => {
+    const redirectTo = window.location.origin;
+    window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=discord&redirect_to=${encodeURIComponent(redirectTo)}`;
+  }, []);
+
+  const loginWithBearerToken = useCallback(
+    async (token: string) => {
+      const s = await validateBearerToken(token);
+      update(s);
+    },
+    [update],
+  );
+
   const authFetch = useCallback(
     async (path: string, init?: RequestInit) => {
       let s = sessionRef.current;
@@ -152,8 +228,8 @@ export function PtrAuthProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<AuthCtx>(
-    () => ({ session, login, logout, authFetch }),
-    [session, login, logout, authFetch],
+    () => ({ session, login, loginWithDiscord, loginWithBearerToken, logout, authFetch }),
+    [session, login, loginWithDiscord, loginWithBearerToken, logout, authFetch],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

@@ -6,15 +6,14 @@ import {
   useState,
   type ReactNode,
 } from "react";
-
-export type Nation = { id: number; name: string };
+import { fetchNationsWithFlags, type NationWithFlag } from "./nations";
 
 type Ctx = {
-  nations: Nation[] | null;
+  nations: NationWithFlag[] | null;
   nationsErr: string | null;
   nationId: number | null;
   setNationId: (id: number | null) => void;
-  selectedNation: Nation | null;
+  selectedNation: NationWithFlag | null;
 };
 
 const NationCtx = createContext<Ctx | null>(null);
@@ -26,20 +25,15 @@ export function NationProvider({ children }: { children: ReactNode }) {
   const [nationId, setNationIdState] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch("/api/ptr/nations")
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json() as Promise<Nation[]>;
-      })
-      .then((d) => {
-        const sorted = [...d].sort((a, b) => a.name.localeCompare(b.name));
-        setNations(sorted);
+    fetchNationsWithFlags()
+      .then((loadedNations) => {
+        setNations(loadedNations);
         const saved =
           typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
         const initial =
-          saved && sorted.find((n) => n.id === Number(saved))
+          saved && loadedNations.find((n) => n.id === Number(saved))
             ? Number(saved)
-            : sorted[0]?.id ?? null;
+            : null;
         setNationIdState(initial);
       })
       .catch((e) => setNationsErr(String((e as Error).message || e)));

@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PollsRouteImport } from './routes/polls'
+import { Route as PartyPrimaryRouteImport } from './routes/party-primary'
 import { Route as MembersRouteImport } from './routes/members'
 import { Route as MajorityRouteImport } from './routes/majority'
 import { Route as IndexRouteImport } from './routes/index'
@@ -18,6 +19,11 @@ import { Route as ApiPtrSplatRouteImport } from './routes/api/ptr.$'
 const PollsRoute = PollsRouteImport.update({
   id: '/polls',
   path: '/polls',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartyPrimaryRoute = PartyPrimaryRouteImport.update({
+  id: '/party-primary',
+  path: '/party-primary',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MembersRoute = MembersRouteImport.update({
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/majority': typeof MajorityRoute
   '/members': typeof MembersRoute
+  '/party-primary': typeof PartyPrimaryRoute
   '/polls': typeof PollsRoute
   '/api/ptr/$': typeof ApiPtrSplatRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/majority': typeof MajorityRoute
   '/members': typeof MembersRoute
+  '/party-primary': typeof PartyPrimaryRoute
   '/polls': typeof PollsRoute
   '/api/ptr/$': typeof ApiPtrSplatRoute
 }
@@ -60,21 +68,32 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/majority': typeof MajorityRoute
   '/members': typeof MembersRoute
+  '/party-primary': typeof PartyPrimaryRoute
   '/polls': typeof PollsRoute
   '/api/ptr/$': typeof ApiPtrSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/majority' | '/members' | '/polls' | '/api/ptr/$'
+  fullPaths:
+    '/' | '/majority' | '/members' | '/party-primary' | '/polls' | '/api/ptr/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/majority' | '/members' | '/polls' | '/api/ptr/$'
-  id: '__root__' | '/' | '/majority' | '/members' | '/polls' | '/api/ptr/$'
+  to:
+    '/' | '/majority' | '/members' | '/party-primary' | '/polls' | '/api/ptr/$'
+  id:
+    | '__root__'
+    | '/'
+    | '/majority'
+    | '/members'
+    | '/party-primary'
+    | '/polls'
+    | '/api/ptr/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   MajorityRoute: typeof MajorityRoute
   MembersRoute: typeof MembersRoute
+  PartyPrimaryRoute: typeof PartyPrimaryRoute
   PollsRoute: typeof PollsRoute
   ApiPtrSplatRoute: typeof ApiPtrSplatRoute
 }
@@ -86,6 +105,13 @@ declare module '@tanstack/react-router' {
       path: '/polls'
       fullPath: '/polls'
       preLoaderRoute: typeof PollsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/party-primary': {
+      id: '/party-primary'
+      path: '/party-primary'
+      fullPath: '/party-primary'
+      preLoaderRoute: typeof PartyPrimaryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/members': {
@@ -123,6 +149,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   MajorityRoute: MajorityRoute,
   MembersRoute: MembersRoute,
+  PartyPrimaryRoute: PartyPrimaryRoute,
   PollsRoute: PollsRoute,
   ApiPtrSplatRoute: ApiPtrSplatRoute,
 }

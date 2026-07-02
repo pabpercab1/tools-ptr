@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { EmptyState } from "@/components/EmptyState";
 import { useNation } from "@/lib/nation-context";
 
 export const Route = createFileRoute("/majority")({
   head: () => ({
     meta: [
-      { title: "Majority Calculator — PR:R Tools" },
+      { title: "Majority Calculator - PR:R Tools" },
       { name: "description", content: "Build coalitions and check simple, absolute and supermajority thresholds." },
     ],
   }),
@@ -137,7 +138,7 @@ function MajorityTool() {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8 space-y-6">
+      <div className="mx-auto max-w-[88rem] px-4 py-6 space-y-6 sm:px-6 sm:py-8">
         <header className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight">Majority Calculator</h1>
           <p className="text-sm text-muted-foreground">
@@ -145,20 +146,16 @@ function MajorityTool() {
           </p>
         </header>
 
+        {nationId == null && <EmptyState message="Pick a nation to begin." />}
 
-
-        {loading && (
+        {nationId != null && loading && (
           <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
             Loading parliament…
           </div>
         )}
-        {err && !loading && (
-          <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-destructive">
-            {err}
-          </div>
-        )}
+        {nationId != null && err && !loading && <EmptyState message={err} tone="error" />}
 
-        {dashboard && !loading && !err && (
+        {nationId != null && dashboard && !loading && !err && (
           <>
             {/* Threshold summary */}
             <section className="grid gap-3 sm:grid-cols-3">
@@ -226,8 +223,8 @@ function MajorityTool() {
             </section>
 
             {/* Party list */}
-            <section className="overflow-hidden rounded-lg border border-border">
-              <table className="w-full text-sm">
+            <section className="overflow-x-auto rounded-lg border border-border">
+              <table className="min-w-[760px] w-full text-sm">
                 <thead className="bg-secondary text-muted-foreground text-xs uppercase tracking-wide">
                   <tr>
                     <th className="text-left font-medium px-3 py-2"></th>

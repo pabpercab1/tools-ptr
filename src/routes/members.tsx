@@ -7,7 +7,7 @@ export const Route = createFileRoute("/members")({
   errorComponent: ({ error, reset }) => {
     const router = useRouter();
     return (
-      <div className="mx-auto max-w-6xl px-6 py-8">
+      <div className="mx-auto max-w-[88rem] px-4 py-6 sm:px-6 sm:py-8">
         <p className="text-sm text-destructive">Something went wrong: {error.message}</p>
         <button
           onClick={() => {
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/members")({
     );
   },
   notFoundComponent: () => (
-    <div className="mx-auto max-w-6xl px-6 py-8 text-sm text-muted-foreground">Not found.</div>
+    <div className="mx-auto max-w-[88rem] px-4 py-6 text-sm text-muted-foreground sm:px-6 sm:py-8">Not found.</div>
   ),
 });
 
@@ -202,7 +202,7 @@ function MembersPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <main className="mx-auto max-w-6xl px-6 py-8 space-y-6">
+      <main className="mx-auto max-w-[88rem] px-4 py-6 space-y-6 sm:px-6 sm:py-8">
         <header className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight">Members</h1>
           <p className="text-sm text-muted-foreground">
@@ -267,8 +267,8 @@ function MembersPage() {
               ) : positions.length === 0 ? (
                 <div className="text-sm text-muted-foreground">No internal positions defined.</div>
               ) : (
-                <div className="rounded-lg border border-border overflow-hidden">
-                  <table className="w-full text-sm">
+                <div className="rounded-lg border border-border overflow-x-auto">
+                  <table className="min-w-[520px] w-full text-sm">
                     <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
                       <tr>
                         <th className="text-left px-3 py-2 font-medium">Position</th>
@@ -299,8 +299,8 @@ function MembersPage() {
               ) : !sortedFigures || sortedFigures.length === 0 ? (
                 <div className="text-sm text-muted-foreground">No members found.</div>
               ) : (
-                <div className="rounded-lg border border-border overflow-hidden">
-                  <table className="w-full text-sm">
+                <div className="rounded-lg border border-border overflow-x-auto">
+                  <table className="min-w-[760px] w-full text-sm">
                     <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
                       <tr>
                         <th className="text-left px-3 py-2 font-medium">Name</th>
