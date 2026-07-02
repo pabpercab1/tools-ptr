@@ -25,10 +25,15 @@ jobs:
       - name: Build app
         run: npm run build
 
+      - name: Fix asset path separator
+        run: sed -i 's/\.\.\\\\public/..\/public/' .output/server/wrangler.json
+        working-directory: .
+
       - name: Deploy to Cloudflare
         uses: cloudflare/wrangler-action@v3
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: .output/server
-          command: deploy
+            apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+            accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+            workingDirectory: .output/server
+            wranglerVersion: "4"
+            command: deploy index.mjs
