@@ -365,7 +365,7 @@ function PollingTool() {
         <header className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight">Polling</h1>
           <p className="text-sm text-muted-foreground">
-            Visualise fictional election polls and compare with previous results.
+            Visualise election polls, compare with previous results and create estimates.
           </p>
         </header>
         <section className="grid gap-4 md:grid-cols-1">
