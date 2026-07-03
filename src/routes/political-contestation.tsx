@@ -13,6 +13,7 @@ import {
   Cell,
   CartesianGrid,
   Customized,
+  Label,
   LabelList,
   ReferenceLine,
   ResponsiveContainer,
@@ -363,6 +364,41 @@ function CompassConnectorLayer({
   );
 }
 
+function CenterAxesLayer(props: any) {
+  const xScale = Object.values(props?.xAxisMap ?? {})[0]?.scale;
+  const yScale = Object.values(props?.yAxisMap ?? {})[0]?.scale;
+  const width = props?.width ?? 0;
+  const height = props?.height ?? 0;
+
+  if (!xScale || !yScale) return null;
+
+  const centerX = xScale(0);
+  const centerY = yScale(0);
+
+  return (
+    <g pointerEvents="none">
+      <line
+        x1={centerX}
+        y1={0}
+        x2={centerX}
+        y2={height}
+        stroke="hsl(var(--foreground))"
+        strokeWidth={2.5}
+        strokeOpacity={0.9}
+      />
+      <line
+        x1={0}
+        y1={centerY}
+        x2={width}
+        y2={centerY}
+        stroke="hsl(var(--foreground))"
+        strokeWidth={2.5}
+        strokeOpacity={0.9}
+      />
+    </g>
+  );
+}
+
 function BothPointsLayer({
   calculatedPoints,
   platformPoints,
@@ -420,7 +456,8 @@ function BothPointsLayer({
               textAnchor="middle"
               fontSize="10"
               fontWeight={700}
-              fill="#000000"
+              fill="currentColor"
+              style={{ color: "hsl(var(--foreground))" }}
             >
               {calculatedPoint.abbreviation}
             </text>
@@ -439,7 +476,8 @@ function BothPointsLayer({
               textAnchor="middle"
               fontSize="10"
               fontWeight={700}
-              fill="#000000"
+              fill="currentColor"
+              style={{ color: "hsl(var(--foreground))" }}
             >
               {platformPoint.abbreviation}
             </text>
@@ -460,7 +498,8 @@ function BlackLabel(props: any) {
       textAnchor="middle"
       fontSize="10"
       fontWeight={700}
-      fill="#000000"
+      fill="currentColor"
+      style={{ color: "hsl(var(--foreground))" }}
     >
       {value}
     </text>
@@ -521,7 +560,7 @@ function AxisDeviationGlyph({ entry }: { entry: AxisDeviation }) {
             }}
           />
           <span
-            className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-slate-900 bg-slate-900"
+            className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-slate-900 bg-slate-900 dark:border-white dark:bg-white"
             style={{ left: `${calculatedPct}%` }}
             aria-label="Calculated position"
           />
@@ -877,8 +916,6 @@ function PoliticalContestationTool() {
                 <ResponsiveContainer width="100%" height="100%">
                   <ScatterChart margin={{ top: 20, right: 24, bottom: 18, left: 8 }}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <ReferenceLine x={0} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.45} />
-                    <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.45} />
                     <XAxis
                       type="number"
                       dataKey="x"
@@ -901,12 +938,15 @@ function PoliticalContestationTool() {
                       tick={{ fontSize: 12 }}
                       axisLine={{ strokeOpacity: 0.35 }}
                       tickLine={{ strokeOpacity: 0.35 }}
-                      label={{
-                        value: `${axisMeta.yNegative} <-> ${axisMeta.yPositive}`,
-                        angle: -90,
-                        position: "insideLeft",
-                      }}
-                    />
+                    >
+                      <Label
+                        value={`${axisMeta.yNegative} <-> ${axisMeta.yPositive}`}
+                        angle={-90}
+                        position="insideLeft"
+                        offset={0}
+                        style={{ textAnchor: "middle" }}
+                      />
+                    </YAxis>
                     <Tooltip
                       cursor={{ strokeDasharray: "3 3" }}
                       content={({ active, payload }) => {
@@ -968,6 +1008,9 @@ function PoliticalContestationTool() {
                         <LabelList dataKey="abbreviation" position="top" content={BlackLabel} />
                       </Scatter>
                     )}
+                    <Customized
+                      component={(props: any) => <CenterAxesLayer {...props} />}
+                    />
                     {source === "both" && (
                       <Customized
                         component={(props: any) => (
@@ -1234,7 +1277,7 @@ function PoliticalContestationTool() {
 
                   <div className="mt-4 flex flex-wrap items-center gap-4 rounded-md border border-border bg-background px-3 py-2 text-xs text-muted-foreground">
                     <span className="inline-flex items-center gap-1.5">
-                      <span className="inline-block h-3 w-3 rounded-full border border-slate-900 bg-slate-900" aria-hidden />
+                      <span className="inline-block h-3 w-3 rounded-full border border-slate-900 bg-slate-900 dark:border-white dark:bg-white" aria-hidden />
                       Calculated
                     </span>
                     <span className="inline-flex items-center gap-1.5">
