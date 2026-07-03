@@ -216,6 +216,37 @@ function fmtAxis(value: number) {
   return value.toFixed(3);
 }
 
+function computeDeviationScore(gaps: number[], comparableCount: number, totalAxisCount: number) {
+  if (comparableCount === 0 || totalAxisCount === 0) return null;
+
+  // Normalize each gap from [0, 2] to [0, 1].
+  const normalized = gaps.map((gap) => Math.max(0, Math.min(1, gap / 2)));
+  const average = normalized.reduce((sum, value) => sum + value, 0) / normalized.length;
+  const weightedAverage = normalized.reduce((sum, value) => sum + value * value, 0) / normalized.length;
+  const maxGap = normalized.reduce((maxValue, value) => Math.max(maxValue, value), 0);
+  const topThreeAverage = [...normalized].sort((a, b) => b - a).slice(0, 3).reduce((sum, value) => sum + value, 0) /
+    Math.min(3, normalized.length);
+  const largeDeviationShare = normalized.filter((value) => value >= 0.25).length / normalized.length;
+  const extremeDeviationShare = normalized.filter((value) => value >= 0.45).length / normalized.length;
+  const severeDeviationShare = normalized.filter((value) => value >= 0.65).length / normalized.length;
+  const coverage = comparableCount / totalAxisCount;
+
+  // Heavily weight outliers and top jumps so visually large moves drop score more.
+  const basePenalty =
+    average * 0.12 +
+    weightedAverage * 0.2 +
+    maxGap * 0.16 +
+    topThreeAverage * 0.2 +
+    largeDeviationShare * 0.12 +
+    extremeDeviationShare * 0.1 +
+    severeDeviationShare * 0.1 +
+    (1 - coverage) * 0.15;
+
+  const penalty = Math.max(0, Math.min(1, basePenalty * 1.45));
+
+  return Math.max(0, Math.min(100, Math.round((1 - penalty) * 100)));
+}
+
 function axisToPercent(value: number) {
   return ((clampAxisValue(value) + 1) / 2) * 100;
 }
@@ -758,15 +789,19 @@ function PoliticalContestationTool() {
     const strongest = ascending.slice(0, strongestCount);
     const strongestCodes = new Set(strongest.map((entry) => entry.axisCode));
     const weakest = descending.filter((entry) => !strongestCodes.has(entry.axisCode));
-    const avgGap = entries.length > 0 ? entries.reduce((sum, entry) => sum + entry.gap, 0) / entries.length : 2;
-    const partyScore = Math.max(0, Math.min(100, Math.round((1 - avgGap / 2) * 100)));
+    const totalAxisCount = Object.keys(AXIS_WEIGHTS).length;
+    const partyScore = computeDeviationScore(
+      entries.map((entry) => entry.gap),
+      entries.length,
+      totalAxisCount,
+    );
 
     return {
       strongest,
       weakest,
       partyScore,
       comparableCount: entries.length,
-      totalAxisCount: Object.keys(AXIS_WEIGHTS).length,
+      totalAxisCount,
       missingCalculated,
       missingPlatform,
     };
@@ -1112,11 +1147,16 @@ function PoliticalContestationTool() {
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <div className="flex min-w-0 items-center gap-2">
                     {selectedParty.logo_url ? (
-                      <img
-                        src={selectedParty.logo_url}
-                        alt={`${selectedParty.name} logo`}
-                        className="h-5 w-5 rounded-sm border border-border object-contain bg-background"
-                      />
+                      <span
+                        className="inline-flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-border"
+                        style={{ backgroundColor: readableFillColor(safeColor(selectedParty.color)) }}
+                      >
+                        <img
+                          src={selectedParty.logo_url}
+                          alt={`${selectedParty.name} logo`}
+                          className="h-full w-full object-contain"
+                        />
+                      </span>
                     ) : (
                       <span
                         className="inline-block h-2.5 w-2.5 rounded-full border"
