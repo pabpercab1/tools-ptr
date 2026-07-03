@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PollsRouteImport } from './routes/polls'
+import { Route as PoliticalContestationRouteImport } from './routes/political-contestation'
 import { Route as PartyPrimaryRouteImport } from './routes/party-primary'
 import { Route as MembersRouteImport } from './routes/members'
 import { Route as MajorityRouteImport } from './routes/majority'
@@ -19,6 +20,11 @@ import { Route as ApiPtrSplatRouteImport } from './routes/api/ptr.$'
 const PollsRoute = PollsRouteImport.update({
   id: '/polls',
   path: '/polls',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoliticalContestationRoute = PoliticalContestationRouteImport.update({
+  id: '/political-contestation',
+  path: '/political-contestation',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PartyPrimaryRoute = PartyPrimaryRouteImport.update({
@@ -52,6 +58,7 @@ export interface FileRoutesByFullPath {
   '/majority': typeof MajorityRoute
   '/members': typeof MembersRoute
   '/party-primary': typeof PartyPrimaryRoute
+  '/political-contestation': typeof PoliticalContestationRoute
   '/polls': typeof PollsRoute
   '/api/ptr/$': typeof ApiPtrSplatRoute
 }
@@ -60,6 +67,7 @@ export interface FileRoutesByTo {
   '/majority': typeof MajorityRoute
   '/members': typeof MembersRoute
   '/party-primary': typeof PartyPrimaryRoute
+  '/political-contestation': typeof PoliticalContestationRoute
   '/polls': typeof PollsRoute
   '/api/ptr/$': typeof ApiPtrSplatRoute
 }
@@ -69,22 +77,36 @@ export interface FileRoutesById {
   '/majority': typeof MajorityRoute
   '/members': typeof MembersRoute
   '/party-primary': typeof PartyPrimaryRoute
+  '/political-contestation': typeof PoliticalContestationRoute
   '/polls': typeof PollsRoute
   '/api/ptr/$': typeof ApiPtrSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/majority' | '/members' | '/party-primary' | '/polls' | '/api/ptr/$'
+    | '/'
+    | '/majority'
+    | '/members'
+    | '/party-primary'
+    | '/political-contestation'
+    | '/polls'
+    | '/api/ptr/$'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/majority' | '/members' | '/party-primary' | '/polls' | '/api/ptr/$'
+    | '/'
+    | '/majority'
+    | '/members'
+    | '/party-primary'
+    | '/political-contestation'
+    | '/polls'
+    | '/api/ptr/$'
   id:
     | '__root__'
     | '/'
     | '/majority'
     | '/members'
     | '/party-primary'
+    | '/political-contestation'
     | '/polls'
     | '/api/ptr/$'
   fileRoutesById: FileRoutesById
@@ -94,6 +116,7 @@ export interface RootRouteChildren {
   MajorityRoute: typeof MajorityRoute
   MembersRoute: typeof MembersRoute
   PartyPrimaryRoute: typeof PartyPrimaryRoute
+  PoliticalContestationRoute: typeof PoliticalContestationRoute
   PollsRoute: typeof PollsRoute
   ApiPtrSplatRoute: typeof ApiPtrSplatRoute
 }
@@ -105,6 +128,13 @@ declare module '@tanstack/react-router' {
       path: '/polls'
       fullPath: '/polls'
       preLoaderRoute: typeof PollsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/political-contestation': {
+      id: '/political-contestation'
+      path: '/political-contestation'
+      fullPath: '/political-contestation'
+      preLoaderRoute: typeof PoliticalContestationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/party-primary': {
@@ -150,6 +180,7 @@ const rootRouteChildren: RootRouteChildren = {
   MajorityRoute: MajorityRoute,
   MembersRoute: MembersRoute,
   PartyPrimaryRoute: PartyPrimaryRoute,
+  PoliticalContestationRoute: PoliticalContestationRoute,
   PollsRoute: PollsRoute,
   ApiPtrSplatRoute: ApiPtrSplatRoute,
 }

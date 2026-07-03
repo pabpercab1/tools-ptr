@@ -28,6 +28,7 @@ function HomePage() {
           <ToolCard to="/majority" title="Majority calculator" desc="Simulate Yes / Abstain / No votes to check simple, absolute and supermajorities." />
           <ToolCard to="/members" title="Members" desc="Browse party internal positions and political figures (sign-in required)." />
           <ToolCard to="/party-primary" title="Party Primary" desc="Model internal party elections with factions, turnout, and ranked-choice rounds." />
+          <ToolCard to="/political-contestation" title="Political Compass" desc="Condense all party ideology categories into a left-right / libertarian-authoritarian map." />
         </div>
       </section>
 

@@ -46,7 +46,6 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  console.error(error);
   const router = useRouter();
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
@@ -172,17 +171,18 @@ function RootComponent() {
                 <div className="flex items-stretch gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:flex-1 md:overflow-visible">
                   {(
                     [
-                      { to: "/", label: "Home", exact: true },
+                      { to: "/", label: "Home" },
                       { to: "/polls", label: "Polling" },
                       { to: "/majority", label: "Majority calculator" },
                       { to: "/members", label: "Members" },
                       { to: "/party-primary", label: "Party Primary" },
+                      { to: "/political-contestation", label: "Political Compass" },
                     ] as const
-                  ).map(({ to, label, exact }) => (
+                  ).map(({ to, label }) => (
                     <Link
                       key={to}
                       to={to}
-                      activeOptions={exact ? { exact: true } : undefined}
+                      activeOptions={to === "/" ? { exact: true } : undefined}
                       activeProps={{ className: "text-foreground border-foreground" }}
                       inactiveProps={{ className: "text-muted-foreground border-transparent hover:text-foreground" }}
                       className="shrink-0 text-xs font-medium px-2.5 flex items-center border-b-2 transition-colors mb-[-1px]"
