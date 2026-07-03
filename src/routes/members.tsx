@@ -1,5 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { EmptyState } from "@/components/EmptyState";
 import { usePtrAuth } from "../lib/ptr-auth";
 
 export const Route = createFileRoute("/members")({
@@ -211,9 +212,10 @@ function MembersPage() {
         </header>
 
         {!session ? (
-          <div className="rounded-lg border border-dashed border-border bg-muted/30 p-6 text-center text-sm text-muted-foreground">
-            Sign in (top-right) with your PR:R account to load your party's members.
-          </div>
+          <EmptyState
+            message="Sign in (top-right) to access Members and load your party's members."
+            tone="error"
+          />
         ) : myPartiesErr ? (
           <div className="text-sm text-destructive">{myPartiesErr}</div>
         ) : !myParties ? (

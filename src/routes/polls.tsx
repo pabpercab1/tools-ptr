@@ -673,7 +673,7 @@ function PollingTool() {
           <div className="space-y-6">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h2 className="text-sm font-semibold">
-                {selectedNation?.name} —{" "}
+                {selectedNation?.name} -{" "}
                 {mode === "poll"
                   ? "Voting intention"
                   : mode === "seats"

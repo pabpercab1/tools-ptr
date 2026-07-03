@@ -53,3 +53,19 @@ For local development, you'll also need `http://localhost:<PORT>` in the Redirec
 - No additional Client ID or credentials needed — they're already in Supabase
 - The Discord app itself is registered in Discord's Developer Portal and linked to Supabase
 - This is all handled server-side by Supabase; the frontend just uses the redirect flow
+
+## Optional Environment Override
+
+If you need Discord OAuth to always redirect to a fixed URL (instead of the current browser origin), set:
+
+- `VITE_DISCORD_REDIRECT_TO=https://your-domain.example`
+- `VITE_DISCORD_LOGIN_ENABLED=true` (default is disabled)
+
+If you need to target a different Supabase project URL, set:
+
+- `VITE_SUPABASE_URL=https://<your-project-ref>.supabase.co`
+
+When this variable is not set, the app defaults to `window.location.origin`.
+
+Discord login visibility and behavior are controlled by `VITE_DISCORD_LOGIN_ENABLED`.
+Accepted true values are `true`, `1`, and `yes`. Any other value (or unset) disables Discord login.

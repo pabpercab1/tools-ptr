@@ -25,6 +25,10 @@ jobs:
       - name: Build for Azure (Nitro node-server preset)
         env:
           NITRO_PRESET: node-server
+          VITE_UPSTREAM_API_URL: ${{ secrets.VITE_UPSTREAM_API_URL }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_DISCORD_REDIRECT_TO: ${{ secrets.VITE_DISCORD_REDIRECT_TO }}
+          VITE_DISCORD_LOGIN_ENABLED: ${{ secrets.VITE_DISCORD_LOGIN_ENABLED }}
         run: npm run build
 
       - name: Deploy to Azure Web App

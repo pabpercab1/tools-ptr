@@ -94,6 +94,10 @@ In GitHub repository:
 1. Go to Settings -> Secrets and variables -> Actions.
 2. Add secret `AZURE_WEBAPP_PUBLISH_PROFILE` with the full publish profile XML content.
 3. Add secret `AZURE_WEBAPP_NAME` with your Azure Web App name.
+4. Add secret `VITE_UPSTREAM_API_URL` with the upstream API base URL (example: `https://api.ptr.zanz2.dev`).
+5. Add secret `VITE_SUPABASE_URL` with the Supabase project URL (example: `https://vsajmskrbiyauigzyiof.supabase.co`).
+6. Optional: add secret `VITE_DISCORD_REDIRECT_TO` to force Discord OAuth callbacks to a fixed URL.
+7. Optional: add secret `VITE_DISCORD_LOGIN_ENABLED` and set `true` to enable Discord login (default disabled).
 
 ### 2) Confirm Azure startup settings once
 
@@ -102,6 +106,10 @@ The workflow deploys files, but startup config belongs to the Azure Web App. Run
 ```powershell
 az webapp config appsettings set --resource-group <rg> --name <app-name> --settings `
   NITRO_PRESET=node-server `
+  VITE_UPSTREAM_API_URL=https://api.ptr.zanz2.dev `
+  VITE_SUPABASE_URL=https://vsajmskrbiyauigzyiof.supabase.co `
+  VITE_DISCORD_REDIRECT_TO=https://<your-domain> `
+  VITE_DISCORD_LOGIN_ENABLED=true `
   NODE_ENV=production
 
 az webapp config set --resource-group <rg> --name <app-name> --startup-file "node .output/server/index.mjs"
@@ -140,6 +148,8 @@ Move hardcoded values to environment variables:
 
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
-- `PTR_API_UPSTREAM`
+- `VITE_UPSTREAM_API_URL`
+- `VITE_DISCORD_REDIRECT_TO`
+- `VITE_DISCORD_LOGIN_ENABLED`
 
 Then set them in Azure App Settings (or Key Vault references).

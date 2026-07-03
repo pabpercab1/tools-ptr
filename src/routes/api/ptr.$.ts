@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-const UPSTREAM = "https://api.ptr.zanz2.dev";
+const UPSTREAM =
+  (import.meta.env.VITE_UPSTREAM_API_URL as string | undefined)?.replace(/\/+$/, "") ||
+  "https://api.ptr.zanz2.dev";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",

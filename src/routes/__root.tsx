@@ -8,9 +8,17 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { MoreHorizontal } from "lucide-react";
 
 import appCss from "../styles.css?url";
 import logoUrl from "../assets/logo.png";
+import { Button } from "../components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -22,6 +30,63 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { PtrAuthProvider } from "../lib/ptr-auth";
 import { NationProvider, useNation } from "../lib/nation-context";
 import { SignInBadge } from "../components/SignInBadge";
+
+const NAV_ITEMS = [
+  { to: "/", label: "Home", exact: true },
+  { to: "/polls", label: "Polling" },
+  { to: "/majority", label: "Majority Calculator" },
+  { to: "/members", label: "Members" },
+  { to: "/party-primary", label: "Party Primary" },
+  { to: "/political-contestation", label: "Political Compass" },
+] as const;
+
+const MOBILE_PRIMARY_NAV_ITEMS = NAV_ITEMS.slice(0, 3);
+const MOBILE_OVERFLOW_NAV_ITEMS = NAV_ITEMS.slice(3);
+const THEME_STORAGE_KEY = "ptr.theme.v1";
+
+const THEME_INIT_SCRIPT = `
+(() => {
+  const storageKey = "${THEME_STORAGE_KEY}";
+  const root = document.documentElement;
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
+
+  const readMode = () => {
+    try {
+      const stored = window.localStorage.getItem(storageKey);
+      return stored === "light" || stored === "dark" ? stored : "auto";
+    } catch {
+      return "auto";
+    }
+  };
+
+  const applyTheme = (mode) => {
+    const isDark = mode === "dark" || (mode === "auto" && media.matches);
+    root.classList.toggle("dark", isDark);
+    root.style.colorScheme = isDark ? "dark" : "light";
+    root.dataset.themeMode = mode;
+  };
+
+  applyTheme(readMode());
+
+  const onMediaChange = () => {
+    if (readMode() === "auto") {
+      applyTheme("auto");
+    }
+  };
+
+  if (typeof media.addEventListener === "function") {
+    media.addEventListener("change", onMediaChange);
+  } else if (typeof media.addListener === "function") {
+    media.addListener(onMediaChange);
+  }
+
+  window.addEventListener("storage", (event) => {
+    if (event.key === storageKey) {
+      applyTheme(readMode());
+    }
+  });
+})();
+`;
 
 function NotFoundComponent() {
   return (
@@ -87,7 +152,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { name: "theme-color", content: "#1f2937" },
+      { name: "theme-color", media: "(prefers-color-scheme: light)", content: "#ffffff" },
+      { name: "theme-color", media: "(prefers-color-scheme: dark)", content: "#111827" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-title", content: "PR:R Tools" },
@@ -120,8 +186,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
       </head>
       <body>
@@ -159,47 +226,54 @@ function RootComponent() {
         <NationProvider>
           <nav className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
             <div className="px-3 sm:px-6">
-              <div className="flex flex-col md:flex-row md:items-stretch md:h-11">
+              <div className="py-2 md:flex md:h-11 md:items-stretch md:py-0">
 
-                {/* Logo + title */}
-                <div className="flex items-center gap-2 shrink-0 py-2 md:py-0 md:pr-4">
-                  <img src={logoUrl} alt="PR:R Tools" className="h-6 w-6 rounded-sm" />
-                  <span className="text-sm font-semibold tracking-tight text-foreground">PR:R Tools</span>
-                </div>
-
-                {/* Nav links – stretch to full nav height so border-b aligns with nav bottom */}
-                <div className="flex items-stretch gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:flex-1 md:overflow-visible">
-                  {(
-                    [
-                      { to: "/", label: "Home" },
-                      { to: "/polls", label: "Polling" },
-                      { to: "/majority", label: "Majority calculator" },
-                      { to: "/members", label: "Members" },
-                      { to: "/party-primary", label: "Party Primary" },
-                      { to: "/political-contestation", label: "Political Compass" },
-                    ] as const
-                  ).map(({ to, label }) => (
-                    <Link
-                      key={to}
-                      to={to}
-                      activeOptions={to === "/" ? { exact: true } : undefined}
-                      activeProps={{ className: "text-foreground border-foreground" }}
-                      inactiveProps={{ className: "text-muted-foreground border-transparent hover:text-foreground" }}
-                      className="shrink-0 text-xs font-medium px-2.5 flex items-center border-b-2 transition-colors mb-[-1px]"
-                    >
-                      {label}
-                    </Link>
-                  ))}
-                </div>
-
-                {/* Nation picker + sign in */}
-                <div className="flex flex-wrap items-center gap-2 pb-2 md:pb-0 md:ml-auto md:flex-nowrap">
-                  <div className="w-full sm:w-auto sm:min-w-[190px] md:w-auto">
+                <div className="flex items-center justify-between gap-3 md:shrink-0 md:pr-4">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <img src={logoUrl} alt="PR:R Tools" className="h-6 w-6 rounded-sm" />
+                    <span className="truncate text-sm font-semibold tracking-tight text-foreground">PR:R Tools</span>
+                  </div>
+                  <div className="min-w-[160px] max-w-[220px] flex-1 md:hidden">
                     <NationPicker />
                   </div>
+                </div>
+
+                <div className="mt-2 flex items-center gap-1 md:hidden">
+                  <div className="grid min-w-0 flex-1 grid-cols-3 gap-1">
+                    {MOBILE_PRIMARY_NAV_ITEMS.map(({ to, label, exact }) => (
+                      <MobileNavLink key={to} to={to} label={label} exact={exact} />
+                    ))}
+                  </div>
+                  {MOBILE_OVERFLOW_NAV_ITEMS.length > 0 && <MobileToolsMenu />}
+                </div>
+
+                <div className="mt-2 md:hidden">
                   <SignInBadge />
                 </div>
 
+                <div className="hidden md:flex md:min-w-0 md:flex-1 md:items-stretch">
+                  <div className="flex items-stretch gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:flex-1 md:overflow-visible">
+                    {NAV_ITEMS.map(({ to, label, exact }) => (
+                      <Link
+                        key={to}
+                        to={to}
+                        activeOptions={exact ? { exact: true } : undefined}
+                        activeProps={{ className: "text-foreground border-foreground" }}
+                        inactiveProps={{ className: "text-muted-foreground border-transparent hover:text-foreground" }}
+                        className="mb-[-1px] flex shrink-0 items-center border-b-2 px-2.5 text-xs font-medium transition-colors"
+                      >
+                        {label}
+                      </Link>
+                    ))}
+                  </div>
+
+                  <div className="ml-auto flex items-center gap-2">
+                    <div className="w-[175px]">
+                      <NationPicker />
+                    </div>
+                    <SignInBadge />
+                  </div>
+                </div>
               </div>
             </div>
           </nav>
@@ -208,6 +282,59 @@ function RootComponent() {
         </NationProvider>
       </PtrAuthProvider>
     </QueryClientProvider>
+  );
+}
+
+function MobileNavLink({
+  to,
+  label,
+  exact,
+}: {
+  to: (typeof NAV_ITEMS)[number]["to"];
+  label: (typeof NAV_ITEMS)[number]["label"];
+  exact?: boolean;
+}) {
+  return (
+    <Link
+      to={to}
+      activeOptions={exact ? { exact: true } : undefined}
+      activeProps={{ className: "border-foreground bg-accent text-foreground" }}
+      inactiveProps={{ className: "border-input text-muted-foreground hover:text-foreground" }}
+      className="inline-flex h-8 min-w-0 items-center justify-center rounded-md border px-2 text-center text-[11px] font-medium leading-tight transition-colors"
+    >
+      <span className="truncate">{label}</span>
+    </Link>
+  );
+}
+
+function MobileToolsMenu() {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 shrink-0 gap-1.5 px-2"
+          aria-label="More tools"
+        >
+          <MoreHorizontal className="size-4" />
+          More
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        {MOBILE_OVERFLOW_NAV_ITEMS.map(({ to, label, exact }) => (
+          <DropdownMenuItem key={to} asChild>
+            <Link
+              to={to}
+              activeOptions={exact ? { exact: true } : undefined}
+              className="w-full"
+            >
+              {label}
+            </Link>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

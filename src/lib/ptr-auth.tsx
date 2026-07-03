@@ -9,8 +9,14 @@ import {
   type ReactNode,
 } from "react";
 
-const SUPABASE_URL = "https://vsajmskrbiyauigzyiof.supabase.co";
+const SUPABASE_URL =
+  (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.replace(/\/+$/, "") ||
+  "https://vsajmskrbiyauigzyiof.supabase.co";
 const SUPABASE_KEY = "sb_publishable_UnExE_cIVhEhaLTImCRj7w_J_j-AoBE";
+const DISCORD_REDIRECT_TO = (import.meta.env.VITE_DISCORD_REDIRECT_TO as string | undefined)?.trim();
+const DISCORD_LOGIN_ENABLED = ["true", "1", "yes"].includes(
+  ((import.meta.env.VITE_DISCORD_LOGIN_ENABLED as string | undefined) ?? "").trim().toLowerCase(),
+);
 const STORAGE_KEY = "ptr.auth.v1";
 
 type StoredSession = {
@@ -23,6 +29,7 @@ type StoredSession = {
 type AuthCtx = {
   session: StoredSession | null;
   login: (email: string, password: string) => Promise<void>;
+  discordLoginEnabled: boolean;
   loginWithDiscord: () => void;
   loginWithBearerToken: (token: string) => Promise<void>;
   logout: () => void;
@@ -196,7 +203,8 @@ export function PtrAuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => update(null), [update]);
 
   const loginWithDiscord = useCallback(() => {
-    const redirectTo = window.location.origin;
+    if (!DISCORD_LOGIN_ENABLED) return;
+    const redirectTo = DISCORD_REDIRECT_TO || window.location.origin;
     window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=discord&redirect_to=${encodeURIComponent(redirectTo)}`;
   }, []);
 
@@ -228,7 +236,15 @@ export function PtrAuthProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<AuthCtx>(
-    () => ({ session, login, loginWithDiscord, loginWithBearerToken, logout, authFetch }),
+    () => ({
+      session,
+      login,
+      discordLoginEnabled: DISCORD_LOGIN_ENABLED,
+      loginWithDiscord,
+      loginWithBearerToken,
+      logout,
+      authFetch,
+    }),
     [session, login, loginWithDiscord, loginWithBearerToken, logout, authFetch],
   );
 
