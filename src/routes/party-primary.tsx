@@ -1731,7 +1731,13 @@ function HorizontalBarResultChart({ data }: { data: HorizontalBarDatum[] }) {
               />
             }
           />
-          <Bar dataKey="sharePct" radius={6} isAnimationActive={false}>
+          <Bar
+            dataKey="sharePct"
+            radius={6}
+            isAnimationActive
+            animationDuration={350}
+            animationEasing="ease-out"
+          >
             {chartData.map((entry) => (
               <Cell key={entry.id} fill={entry.color} />
             ))}

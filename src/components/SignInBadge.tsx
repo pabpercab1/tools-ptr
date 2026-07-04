@@ -97,7 +97,7 @@ function SignInModal({ onClose }: { onClose: () => void }) {
       >
         <h2 className="text-base font-semibold text-foreground">Sign in to PR:R</h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          Uses your PR:R account credentials. Tokens are kept only in your browser.
+          Sign in with your PR:R account. Your credentials stay in your browser and are never shared.
         </p>
         <form onSubmit={onSubmit} className="mt-4 space-y-3">
           <div>

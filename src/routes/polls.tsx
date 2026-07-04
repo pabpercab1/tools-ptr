@@ -1028,42 +1028,49 @@ function BarChart({
                 priorPollSeatMap,
               );
 
+              const showPrevBar = hasComparison && prevRaw != null && prevRaw > 0;
+              const showCurrentBar = value > 0;
+
               return (
                 <div key={p.party_id} className="flex-1 min-w-0 h-full relative">
                   {/* Previous bar (lighter, thinner, offset behind/right) */}
-                  {hasComparison && prevRaw != null && prevRaw > 0 && (
-                    <div
-                      className="absolute bottom-0 rounded-t-sm"
-                      style={{
-                        height: `${prevHpct}%`,
-                        left: "52%",
-                        right: "10%",
-                        backgroundColor: light,
-                        border: `1px solid ${borderForColor(light)}`,
-                      }}
-                    >
+                  <div
+                    className="absolute bottom-0 rounded-t-sm transition-[height,left,right,opacity] duration-300 ease-out"
+                    style={{
+                      height: showPrevBar ? `${prevHpct}%` : "0%",
+                      left: "52%",
+                      right: "10%",
+                      opacity: showPrevBar ? 1 : 0,
+                      backgroundColor: light,
+                      border: `1px solid ${borderForColor(light)}`,
+                      pointerEvents: showPrevBar ? "auto" : "none",
+                    }}
+                  >
+                    {showPrevBar && (
                       <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 italic text-[9px] text-muted-foreground tabular-nums whitespace-nowrap">
                         {prevDisplay}
                       </span>
-                    </div>
-                  )}
+                    )}
+                  </div>
                   {/* Current bar (main) */}
-                  {value > 0 && (
-                    <div
-                      className="absolute bottom-0 rounded-t-sm transition-[height] duration-300"
-                      style={{
-                        height: `${curHpct}%`,
-                        left: "10%",
-                        right: hasComparison && prevRaw != null ? "48%" : "10%",
-                        backgroundColor: color,
-                        border: `1px solid ${borderForColor(color)}`,
-                      }}
-                    >
+                  <div
+                    className="absolute bottom-0 rounded-t-sm transition-[height,left,right,opacity] duration-300 ease-out"
+                    style={{
+                      height: showCurrentBar ? `${curHpct}%` : "0%",
+                      left: "10%",
+                      right: hasComparison && prevRaw != null ? "48%" : "10%",
+                      opacity: showCurrentBar ? 1 : 0,
+                      backgroundColor: color,
+                      border: `1px solid ${borderForColor(color)}`,
+                      pointerEvents: showCurrentBar ? "auto" : "none",
+                    }}
+                  >
+                    {showCurrentBar && (
                       <span className="absolute -top-4 left-1/2 -translate-x-1/2 font-bold text-[10px] tabular-nums whitespace-nowrap text-foreground">
                         {display}
                       </span>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               );
             })}
